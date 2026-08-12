@@ -1,0 +1,141 @@
+:root {
+  --rose: #B04A63;
+  --rose-deep: #7E2F44;
+  --rose-soft: #F2D9DF;
+  --cream: #FDF8F6;
+  --cream-dim: #F5ECE8;
+  --ink: #2B1E22;
+  --ink-soft: #6B5A5F;
+  --gold: #C9A24B;
+  --emergency: #B0342C;
+  --urgent: #C97A2B;
+  --routine: #4A7A6B;
+  --selfcare: #6E8F6A;
+
+  --font-display: "Fraunces", serif;
+  --font-body: "Inter", system-ui, sans-serif;
+
+  --radius: 18px;
+  --shadow: 0 8px 24px rgba(123, 47, 68, 0.10);
+}
+
+* { box-sizing: border-box; }
+
+html, body, #root {
+  margin: 0;
+  min-height: 100%;
+  background: var(--cream);
+  color: var(--ink);
+  font-family: var(--font-body);
+}
+
+body {
+  -webkit-font-smoothing: antialiased;
+}
+
+h1, h2, h3, .display {
+  font-family: var(--font-display);
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  margin: 0;
+}
+
+a { color: inherit; }
+
+button {
+  font-family: var(--font-body);
+  cursor: pointer;
+}
+
+.container {
+  max-width: 880px;
+  margin: 0 auto;
+  padding: 0 20px;
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 22px;
+  border-radius: 999px;
+  border: none;
+  font-weight: 600;
+  font-size: 15px;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+.btn:focus-visible { outline: 3px solid var(--gold); outline-offset: 2px; }
+.btn:active { transform: scale(0.98); }
+
+.btn-primary {
+  background: var(--rose);
+  color: white;
+  box-shadow: var(--shadow);
+}
+.btn-primary:hover { background: var(--rose-deep); }
+
+.btn-ghost {
+  background: transparent;
+  color: var(--rose-deep);
+  border: 1.5px solid var(--rose-soft);
+}
+.btn-ghost:hover { background: var(--rose-soft); }
+
+.card {
+  background: white;
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 24px;
+}
+
+.pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 12px;
+  border-radius: 999px;
+  font-size: 12.5px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.pill-emergency { background: #FBE4E1; color: var(--emergency); }
+.pill-urgent { background: #FBEBD8; color: var(--urgent); }
+.pill-routine { background: #E3EFE9; color: var(--routine); }
+.pill-selfcare { background: #E8F0E4; color: var(--selfcare); }
+
+@media (prefers-reduced-motion: reduce) {
+  * { animation: none !important; transition: none !important; }
+}
+
+/* Print: only the result summary shows, everything else in the app is hidden */
+.print-only { display: none; }
+@media print {
+  body * { visibility: hidden; }
+  .print-only, .print-only * { visibility: visible; }
+  .print-only {
+    display: block;
+    position: absolute; top: 0; left: 0; width: 100%;
+    padding: 30px; font-family: Georgia, serif; color: #000;
+  }
+  .print-only h2 { font-size: 20px; margin-bottom: 10px; }
+  .print-only p { font-size: 13px; line-height: 1.6; margin: 6px 0; }
+  .no-print { display: none !important; }
+}
+@media (max-width: 860px) {
+  .sakhi-burger { display: block !important; }
+  .sakhi-nav {
+    display: none !important;
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    flex-direction: column;
+    align-items: stretch;
+    background: var(--cream);
+    border-bottom: 1px solid #F0DFE2;
+    padding: 10px 20px 16px;
+  }
+  .sakhi-nav.open { display: flex !important; }
+  .sakhi-nav .lang-group { margin-left: 0; border-left: none; padding-left: 0; margin-top: 8px; }
+}
