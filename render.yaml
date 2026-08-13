@@ -1,0 +1,47 @@
+# render.yaml — backend deployment.
+#
+# The Sakhi API is a stateful, long-running process: sessions live in memory,
+# and accounts, the audit log and triage records are written to disk. That rules
+# out serverless platforms (see DEPLOYMENT.md) and calls for a normal Node
+# service with a persistent volume, which is what this describes.
+#
+# Render is used here because the free tier runs a real process rather than a
+# function. Railway, Fly.io or any VPS work identically — the only requirement
+# is a writable, persistent /data and a single instance.
+
+services:
+  - type: web
+    name: sakhi-api
+    runtime: node
+    plan: starter          # A disk cannot be attached on the free plan. See the note below.
+    region: singapore      # Closest Render region to Indian users.
+    rootDir: server
+    buildCommand: npm install
+    startCommand: npm start
+    healthCheckPath: /api/health
+
+    # IMPORTANT: keep this at 1.
+    #
+    # Sessions and rate-limit buckets are per-process in-memory Maps. With two
+    # instances behind a load balancer, a worker would be signed in on one and
+    # signed out on the other at random, and the rate limiter would allow N
+    # times the intended attempts. Scaling out requires moving both to Redis
+    # first — it is not a config change.
+    numInstances: 1
+
+    disk:
+      name: sakhi-data
+      # accounts.js, store.js and audit.js all resolve paths relative to
+      # server/data, so the volume is mounted exactly there.
+      mountPath: /opt/render/project/src/server/data
+      sizeGB: 1
+
+    envVars:
+      - key: NODE_ENV
+        value: production          # Enables Secure cookies and HSTS, and disables every demo affordance.
+      - key: PORT
+        value: 4000
+      - key: TRUST_PROXY
+        value: "true"              # Required behind Render's proxy — see DEPLOYMENT.md, this one is a trap.
+      - key: ALLOWED_ORIGINS
+        sync: false                # Set to your Vercel URL in the dashboard.
