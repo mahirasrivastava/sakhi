@@ -1,0 +1,25 @@
+node_modules/
+dist/
+build/
+.env
+.env.local
+*.log
+.DS_Store
+.vscode/
+.idea/
+
+# ---------------------------------------------------------------------------
+# server/data/ is runtime state, not source. Nothing in it belongs on GitHub:
+#
+#   sessions.json        patient triage records, including their own words
+#   asha-accounts.json   worker accounts and password hashes
+#   ACTIVATION-CODES.txt plaintext one-time activation codes
+#   audit-log.jsonl      who opened which patient record
+#
+# The whole directory is ignored rather than listed file by file, so a new
+# runtime file added later is excluded by default instead of leaking because
+# someone forgot to add a line here. The server recreates the directory and
+# re-provisions accounts on boot, so nothing is lost by not committing it.
+# ---------------------------------------------------------------------------
+server/data/*
+!server/data/.gitkeep

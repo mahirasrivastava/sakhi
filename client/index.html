@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Sakhi — a private health companion</title>
+    <meta name="description" content="A private, voice-first health companion for women and girls. Free, anonymous, and in your own language." />
+
+    <!-- SVG first for browsers that support it (stays crisp at any size); the
+         32px PNG is the fallback, and it carries the Devanagari glyph as pixels
+         so it renders correctly on systems with no Devanagari font installed. -->
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
+    <link rel="manifest" href="/site.webmanifest" />
+
+    <!-- Tints the mobile browser UI to match the header. Two values so the bar
+         does not stay cream when the app is in dark mode. -->
+    <meta name="theme-color" content="#B04A63" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#2C1A20" media="(prefers-color-scheme: dark)" />
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.jsx"></script>
+  </body>
+</html>

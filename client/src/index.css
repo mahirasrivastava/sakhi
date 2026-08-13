@@ -1,0 +1,577 @@
+/* ---------------------------------------------------------------------------
+   Design tokens
+   ---------------------------------------------------------------------------
+   Every colour in the app resolves through one of these. Components reference
+   the token, never a raw hex — that is what makes a single dark-mode block
+   below able to re-theme the whole interface, including the many inline
+   `style={{ ... }}` objects, which CSS could not otherwise reach.
+
+   The palette is defined light-first on :root. The dark block redefines only
+   the values, never the names.
+--------------------------------------------------------------------------- */
+
+:root {
+  /* Brand */
+  --rose: #B04A63;
+  --rose-deep: #7E2F44;
+  --rose-soft: #F2D9DF;
+  --gold: #C9A24B;
+  --on-brand: #FFFFFF;
+
+  /* Surfaces */
+  --cream: #FDF8F6;
+  --cream-dim: #F5ECE8;
+  --surface: #FFFFFF;
+  --surface-alt: #FBF3F0;
+  --header-bg: rgba(253, 248, 246, 0.94);
+  --overlay: rgba(43, 30, 34, 0.45);
+
+  /* The utility strip is its own always-dark surface in both themes, so it
+     keeps the same "official notice board" weight rather than inverting. */
+  --utility-bg: #6E2237;
+  --on-utility: #FBEDF0;
+
+  /* Text */
+  --ink: #2B1E22;
+  --ink-soft: #6B5A5F;
+  --ink-muted: #9C8A8F;
+
+  /* Lines */
+  --border: #F0DFE2;
+  --border-strong: #E6C9D0;
+
+  /* Triage levels */
+  --emergency: #B0342C;
+  --urgent: #C97A2B;
+  --routine: #4A7A6B;
+  --selfcare: #6E8F6A;
+
+  --pill-emergency-bg: #FBE4E1;
+  --pill-urgent-bg: #FBEBD8;
+  --pill-routine-bg: #E3EFE9;
+  --pill-selfcare-bg: #E8F0E4;
+
+  /* Status */
+  --emergency-bg: #FBE4E1;
+  --emergency-ink: #7A241D;
+  --emergency-border: #F3C9C4;
+  --danger-border: #D98A82;
+
+  --warn-bg: #FDF3E7;
+  --warn-ink: #7A5320;
+  --warn-border: #F0DCC0;
+
+  --success-ink: #2E6B4F;
+
+  /* Development-only notices (the demo banner). Blue keeps them visually
+     distinct from anything clinical. */
+  --info-bg: #EEF4FB;
+  --info-ink: #2F4A66;
+  --info-border: #B9CFE6;
+  --info-chip: rgba(47, 74, 102, 0.10);
+
+  --font-display: "Fraunces", serif;
+  --font-body: "Inter", system-ui, sans-serif;
+
+  --radius: 18px;
+  --shadow: 0 8px 24px rgba(123, 47, 68, 0.10);
+}
+
+/* ---------------------------------------------------------------------------
+   Dark theme
+   ---------------------------------------------------------------------------
+   Set by ThemeContext as data-theme="dark" on <html>. Not a media query: the
+   user's explicit choice has to be able to override the OS, and ThemeContext
+   already resolves "system" down to a concrete value before setting it.
+
+   Warm greys rather than neutral ones, so the rose brand still sits naturally.
+   Tinted status backgrounds become dark washes of the same hue instead of
+   pastels, which would glow on a dark page.
+--------------------------------------------------------------------------- */
+
+[data-theme="dark"] {
+  --rose: #E08099;
+  --rose-deep: #F0AEBE;
+  --rose-soft: #4A2732;
+  --gold: #D9B76A;
+  --on-brand: #24151A;
+
+  --cream: #171013;
+  --cream-dim: #241A1E;
+  --surface: #1F171A;
+  --surface-alt: #2A1E23;
+  --header-bg: rgba(23, 16, 19, 0.94);
+  --overlay: rgba(0, 0, 0, 0.62);
+  --utility-bg: #2C1A20;
+  --on-utility: #F2D8DF;
+
+  --ink: #F3E9EB;
+  --ink-soft: #C4B2B7;
+  --ink-muted: #97878C;
+
+  --border: #3A2C31;
+  --border-strong: #4E3A41;
+
+  --emergency: #FF8B80;
+  --urgent: #E9A961;
+  --routine: #7FBBA3;
+  --selfcare: #9CC095;
+
+  --pill-emergency-bg: #47201D;
+  --pill-urgent-bg: #45301A;
+  --pill-routine-bg: #1E332C;
+  --pill-selfcare-bg: #24331F;
+
+  --emergency-bg: #3A1C1A;
+  --emergency-ink: #FFB3AA;
+  --emergency-border: #62302C;
+  --danger-border: #8A4A44;
+
+  --warn-bg: #3A2B18;
+  --warn-ink: #EFC98D;
+  --warn-border: #5C452A;
+
+  --success-ink: #7FC49E;
+
+  --info-bg: #1B2733;
+  --info-ink: #A9C8E4;
+  --info-border: #33506B;
+  --info-chip: rgba(169, 200, 228, 0.14);
+
+  /* A dark page needs a deeper, less saturated shadow — the light-mode rose
+     shadow reads as a pink halo against near-black. */
+  --shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
+}
+
+* { box-sizing: border-box; }
+
+html, body, #root {
+  margin: 0;
+  min-height: 100%;
+  background: var(--cream);
+  color: var(--ink);
+  font-family: var(--font-body);
+}
+
+body {
+  -webkit-font-smoothing: antialiased;
+  /* Theme changes shouldn't flash — but a page load shouldn't animate either,
+     so the transition is short enough to read as an ease rather than a fade. */
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+h1, h2, h3, .display {
+  font-family: var(--font-display);
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  margin: 0;
+}
+
+a { color: inherit; }
+
+button {
+  font-family: var(--font-body);
+  cursor: pointer;
+}
+
+/* Native controls follow the theme instead of staying stubbornly white. */
+input, select, textarea {
+  font-family: var(--font-body);
+  color: var(--ink);
+  background: var(--surface);
+}
+input::placeholder, textarea::placeholder { color: var(--ink-muted); }
+
+/* The shell is wide so the page fills a laptop screen instead of floating in
+   two empty margins. Long-form reading content opts into .container-narrow,
+   because a 1280px-wide paragraph is genuinely harder to read. */
+.container {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 0 28px;
+}
+
+.container-narrow {
+  max-width: 780px;
+  margin: 0 auto;
+  padding: 0 28px;
+}
+
+@media (max-width: 640px) {
+  .container, .container-narrow { padding: 0 16px; }
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 22px;
+  border-radius: 999px;
+  border: none;
+  font-weight: 600;
+  font-size: 15px;
+  /* Many buttons here are <a> or <Link>, which the UA underlines by default —
+     a button that looks like a hyperlink reads as a broken button. */
+  text-decoration: none;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+.btn:focus-visible { outline: 3px solid var(--gold); outline-offset: 2px; }
+.btn:active { transform: scale(0.98); }
+.btn:disabled { opacity: 0.55; cursor: not-allowed; }
+
+.btn-primary {
+  background: var(--rose);
+  color: var(--on-brand);
+  box-shadow: var(--shadow);
+}
+.btn-primary:hover { background: var(--rose-deep); }
+
+.btn-ghost {
+  background: transparent;
+  color: var(--rose-deep);
+  border: 1.5px solid var(--rose-soft);
+}
+.btn-ghost:hover { background: var(--rose-soft); }
+
+.card {
+  background: var(--surface);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 24px;
+  /* In dark mode shadows alone don't separate a card from the page, so the
+     card gets a hairline that is invisible in light mode. */
+  border: 1px solid var(--border);
+}
+
+.pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 12px;
+  border-radius: 999px;
+  font-size: 12.5px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.pill-emergency { background: var(--pill-emergency-bg); color: var(--emergency); }
+.pill-urgent { background: var(--pill-urgent-bg); color: var(--urgent); }
+.pill-routine { background: var(--pill-routine-bg); color: var(--routine); }
+.pill-selfcare { background: var(--pill-selfcare-bg); color: var(--selfcare); }
+
+@media (prefers-reduced-motion: reduce) {
+  * { animation: none !important; transition: none !important; }
+}
+
+/* Print: only the result summary shows, everything else in the app is hidden.
+   Forced to light ink on white — a dark-mode print is unreadable on paper and
+   wastes a health worker's toner. */
+.print-only { display: none; }
+@media print {
+  body * { visibility: hidden; }
+  .print-only, .print-only * { visibility: visible; color: #000 !important; background: #fff !important; }
+  .print-only {
+    display: block;
+    position: absolute; top: 0; left: 0; width: 100%;
+    padding: 30px; font-family: Georgia, serif; color: #000;
+  }
+  .print-only h2 { font-size: 20px; margin-bottom: 10px; }
+  .print-only p { font-size: 13px; line-height: 1.6; margin: 6px 0; }
+  .no-print { display: none !important; }
+}
+
+/* ---------------------------------------------------------------------------
+   Site header
+   ---------------------------------------------------------------------------
+   Modelled on the public-service portal pattern: a thin utility strip carrying
+   helplines and settings, then one solid band with the identity and a single
+   row of primary links. The links never wrap onto a second line — below the
+   breakpoint they collapse into the menu button instead, because a nav that
+   silently reflows into three rows reads as broken rather than responsive.
+--------------------------------------------------------------------------- */
+
+.site-header {
+  position: sticky;
+  top: 0;
+  z-index: 40;
+  background: var(--header-bg);
+  backdrop-filter: blur(8px);
+  border-bottom: 2px solid var(--rose);
+}
+
+/* Utility strip */
+.utility-bar {
+  background: var(--utility-bg);
+  color: var(--on-utility);
+  font-size: 12.5px;
+}
+.utility-inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  min-height: 38px;
+  padding-top: 5px;
+  padding-bottom: 5px;
+  flex-wrap: wrap;
+}
+.utility-left { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
+.utility-right { display: flex; align-items: center; gap: 8px; }
+
+.helpline {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--on-utility);
+  text-decoration: none;
+  font-weight: 600;
+  padding: 3px 9px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  white-space: nowrap;
+}
+.helpline:hover { background: rgba(255, 255, 255, 0.16); }
+.utility-note { opacity: 0.85; white-space: nowrap; }
+
+/* The language and theme controls sit on the dark strip, so they carry their
+   own light-on-dark treatment rather than the page surface colours. */
+.util-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 11px;
+  font-size: 12.5px;
+  font-weight: 600;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.14);
+  border: 1px solid rgba(255, 255, 255, 0.30);
+  color: var(--on-utility);
+  max-width: 170px;
+  white-space: nowrap;
+}
+.util-btn:hover { background: rgba(255, 255, 255, 0.24); }
+
+/* Brand + nav band */
+.header-main {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 22px;
+  padding-top: 12px;
+  padding-bottom: 12px;
+}
+
+.brand { display: flex; align-items: center; gap: 12px; text-decoration: none; color: var(--ink); flex-shrink: 0; }
+.brand-mark {
+  width: 46px; height: 46px; border-radius: 12px;
+  background: var(--rose); color: var(--on-brand);
+  display: flex; align-items: center; justify-content: center;
+  font-family: var(--font-display); font-size: 24px; font-weight: 700;
+  box-shadow: 0 2px 8px rgba(123, 47, 68, 0.25);
+  flex-shrink: 0;
+}
+.brand-name { font-family: var(--font-display); font-size: 25px; font-weight: 700; line-height: 1.05; }
+.brand-tag {
+  display: block; font-size: 11.5px; color: var(--ink-muted);
+  letter-spacing: 0.04em; text-transform: uppercase; font-weight: 600; margin-top: 2px;
+}
+
+.sakhi-nav { display: flex; align-items: center; gap: 3px; flex-wrap: nowrap; }
+
+.nav-link {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  padding: 7px 10px;
+  border-radius: 10px;
+  font-size: 12.5px;
+  font-weight: 600;
+  line-height: 1.2;
+  text-decoration: none;
+  color: var(--ink-soft);
+  text-align: center;
+  white-space: nowrap;
+  border-bottom: 3px solid transparent;
+}
+.nav-link .nav-icon { font-size: 17px; line-height: 1; }
+.nav-link:hover { background: var(--rose-soft); color: var(--rose-deep); }
+.nav-link.active {
+  color: var(--rose-deep);
+  background: var(--rose-soft);
+  border-bottom-color: var(--rose);
+}
+
+.staff-link {
+  margin-left: 6px;
+  border: 1px dashed var(--border-strong);
+  color: var(--ink-muted);
+  padding: 5px 11px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+  text-decoration: none;
+  white-space: nowrap;
+}
+.staff-link:hover { background: var(--cream-dim); color: var(--rose-deep); }
+
+.sakhi-burger { display: none; background: none; border: none; font-size: 26px; color: var(--rose-deep); }
+
+/* Below this width ten links cannot sit on one row at a legible size, so they
+   become a proper menu rather than wrapping. */
+@media (max-width: 1180px) {
+  .sakhi-burger { display: block; }
+  .sakhi-nav {
+    display: none;
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 2px;
+    background: var(--cream);
+    border-bottom: 2px solid var(--rose);
+    box-shadow: var(--shadow);
+    padding: 12px 20px 18px;
+    max-height: 75vh;
+    overflow-y: auto;
+  }
+  .sakhi-nav.open { display: flex; }
+  .nav-link {
+    flex-direction: row;
+    justify-content: flex-start;
+    gap: 12px;
+    font-size: 16px;
+    padding: 13px 14px;
+    border-bottom: none;
+    border-left: 3px solid transparent;
+    text-align: start;
+  }
+  .nav-link .nav-icon { font-size: 21px; }
+  .nav-link.active { border-left-color: var(--rose); }
+  .staff-link { margin-left: 0; margin-top: 10px; text-align: center; padding: 12px; font-size: 15px; }
+}
+
+@media (max-width: 560px) {
+  .utility-note { display: none; }
+  .brand-tag { display: none; }
+  .brand-mark { width: 40px; height: 40px; font-size: 21px; }
+  .brand-name { font-size: 21px; }
+}
+
+/* ---------------------------------------------------------------------------
+   Form patterns
+   ---------------------------------------------------------------------------
+   Numbered steps and large tap targets. Both are accessibility decisions before
+   they are style ones: this is used one-handed, on a cheap phone, sometimes by
+   someone who reads slowly, and a numbered sequence is far easier to follow
+   than a wall of equally-weighted labels.
+--------------------------------------------------------------------------- */
+
+.step { display: flex; align-items: flex-start; gap: 13px; margin-bottom: 12px; }
+.step-num {
+  flex-shrink: 0;
+  width: 30px; height: 30px; border-radius: 50%;
+  background: var(--rose); color: var(--on-brand);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 15px; font-weight: 700; font-family: var(--font-display);
+}
+.step-label { font-size: 17px; font-weight: 700; color: var(--ink); line-height: 1.35; }
+.step-hint { font-size: 13.5px; color: var(--ink-muted); margin-top: 3px; line-height: 1.55; }
+
+.choice-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(178px, 1fr));
+  gap: 10px;
+}
+.choice {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 13px 14px;
+  border-radius: 12px;
+  border: 1.5px solid var(--border);
+  background: var(--surface);
+  color: var(--ink);
+  font-size: 14.5px;
+  font-weight: 500;
+  text-align: start;
+  line-height: 1.35;
+  min-height: 58px;
+}
+.choice:hover { border-color: var(--rose); background: var(--cream-dim); }
+.choice[aria-pressed="true"] {
+  border-color: var(--rose);
+  border-width: 2px;
+  background: var(--rose-soft);
+  color: var(--rose-deep);
+  font-weight: 700;
+}
+.choice-icon { font-size: 22px; line-height: 1; flex-shrink: 0; }
+
+.field-input {
+  width: 100%;
+  padding: 13px 14px;
+  border-radius: 12px;
+  border: 1.5px solid var(--border);
+  font-size: 16px;
+  background: var(--surface);
+  color: var(--ink);
+  font-family: var(--font-body);
+}
+.field-input:focus { outline: 3px solid var(--gold); outline-offset: 1px; border-color: var(--rose); }
+
+.btn-lg { padding: 16px 34px; font-size: 17px; }
+
+/* ---------------------------------------------------------------------------
+   Two-column page layout
+   ---------------------------------------------------------------------------
+   The main job on the left, supporting context on the right. On a wide screen
+   this is what stops the page reading as a narrow strip with empty margins; on
+   a narrow one the aside drops below, where it is still useful.
+--------------------------------------------------------------------------- */
+
+.split {
+  display: grid;
+  grid-template-columns: minmax(0, 1.85fr) minmax(0, 1fr);
+  gap: 26px;
+  align-items: start;
+}
+@media (max-width: 940px) {
+  .split { grid-template-columns: 1fr; }
+}
+
+.aside-card {
+  background: var(--surface-alt);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 20px;
+}
+.aside-title {
+  font-size: 12px; font-weight: 700; text-transform: uppercase;
+  letter-spacing: 0.07em; color: var(--rose-deep); margin-bottom: 10px;
+}
+
+/* Sticky on tall screens so the helpline stays reachable while scrolling a
+   long form — but never on short ones, where it would eat the viewport. */
+@media (min-width: 941px) and (min-height: 700px) {
+  .aside-sticky { position: sticky; top: 150px; }
+}
+
+/* ---------------------------------------------------------------------------
+   Right-to-left
+   ---------------------------------------------------------------------------
+   Set by LanguageContext for Urdu, Kashmiri and Sindhi. Logical properties do
+   most of the work; these are the few places where a physical direction was
+   baked in.
+--------------------------------------------------------------------------- */
+[dir="rtl"] .sakhi-nav .lang-group {
+  border-left: none;
+  border-right: 1px solid var(--border);
+  padding-left: 0;
+  padding-right: 10px;
+  margin-left: 0;
+  margin-right: 8px;
+}
+[dir="rtl"] ul, [dir="rtl"] ol { padding-left: 0; padding-right: 20px; }

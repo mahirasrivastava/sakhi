@@ -1,0 +1,177 @@
+[
+  {
+    "id": "WHO-MDS-001",
+    "topic": "maternal_danger_signs",
+    "tags": ["heavy_bleeding_hourly", "bleeding", "pregnancy", "postpartum", "emergency"],
+    "source": "WHO Pregnancy Danger Signs / MOHFW Maternal Health Guidelines",
+    "sourceUrl": "https://www.who.int/health-topics/maternal-health",
+    "en": {
+      "title": "Heavy bleeding during or after pregnancy",
+      "body": "Bleeding that soaks through a pad or cloth within one hour is a medical emergency. This can happen during pregnancy (threatened miscarriage, placenta problems) or after delivery (postpartum haemorrhage). Postpartum haemorrhage is one of the leading causes of maternal death globally, but it is treatable when caught early. Do not wait to see if it stops on its own.",
+      "whatToDo": ["Call 108 or go to the nearest hospital immediately.", "Lie down and keep your legs elevated if possible.", "Do not take any traditional remedies or wait — blood loss can become life-threatening within minutes.", "If someone near you has the same blood group, alert them — blood may be needed."],
+      "doNot": ["Do not try to stop the bleeding with home remedies.", "Do not delay even if it is nighttime or the facility is far."]
+    },
+    "hi": {
+      "title": "गर्भावस्था के दौरान या बाद में भारी रक्तस्राव",
+      "body": "अगर एक घंटे के अंदर पैड या कपड़ा पूरा भीग जाए, तो यह आपातकालीन स्थिति है। यह गर्भावस्था में (गर्भपात का खतरा, प्लेसेंटा की समस्या) या प्रसव के बाद (प्रसवोत्तर रक्तस्राव) हो सकता है। प्रसवोत्तर रक्तस्राव दुनिया भर में मातृ मृत्यु के प्रमुख कारणों में से एक है, लेकिन समय पर पहचान होने पर इलाज संभव है।",
+      "whatToDo": ["तुरंत 108 कॉल करें या निकटतम अस्पताल जाएं।", "लेट जाएं और हो सके तो पैर ऊपर रखें।", "कोई घरेलू उपाय न आज़माएं और इंतज़ार न करें — खून की कमी कुछ ही मिनटों में जानलेवा हो सकती है।", "अगर पास में कोई समान ब्लड ग्रुप का व्यक्ति है, तो उन्हें सूचित करें।"],
+      "doNot": ["घरेलू उपचार से रक्तस्राव रोकने की कोशिश न करें।", "रात हो या अस्पताल दूर हो, फिर भी देरी न करें।"]
+    },
+    "kn": {
+      "title": "ಗರ್ಭಧಾರಣೆ ಸಮಯದಲ್ಲಿ ಅಥವಾ ನಂತರ ಭಾರೀ ರಕ್ತಸ್ರಾವ",
+      "body": "ಒಂದು ಗಂಟೆಯೊಳಗೆ ಪ್ಯಾಡ್ ಅಥವಾ ಬಟ್ಟೆ ಸಂಪೂರ್ಣ ತೊಯ್ಯುವಷ್ಟು ರಕ್ತಸ್ರಾವ ವೈದ್ಯಕೀಯ ತುರ್ತುಸ್ಥಿತಿ. ಇದು ಗರ್ಭಧಾರಣೆ ಸಮಯದಲ್ಲಿ (ಗರ್ಭಪಾತದ ಅಪಾಯ, ಪ್ಲೆಸೆಂಟಾ ಸಮಸ್ಯೆ) ಅಥವಾ ಹೆರಿಗೆಯ ನಂತರ (ಪ್ರಸವೋತ್ತರ ರಕ್ತಸ್ರಾವ) ಸಂಭವಿಸಬಹುದು. ಸಮಯಕ್ಕೆ ಗುರುತಿಸಿದರೆ ಚಿಕಿತ್ಸೆ ಸಾಧ್ಯ.",
+      "whatToDo": ["ತಕ್ಷಣ 108 ಕರೆ ಮಾಡಿ ಅಥವಾ ಹತ್ತಿರದ ಆಸ್ಪತ್ರೆಗೆ ಹೋಗಿ.", "ಮಲಗಿ ಸಾಧ್ಯವಾದರೆ ಕಾಲುಗಳನ್ನು ಮೇಲೆ ಇರಿಸಿ.", "ಮನೆಮದ್ದು ಪ್ರಯತ್ನಿಸಬೇಡಿ, ಕಾಯಬೇಡಿ — ಕೆಲವೇ ನಿಮಿಷಗಳಲ್ಲಿ ರಕ್ತದ ಕೊರತೆ ಜೀವಕ್ಕೆ ಅಪಾಯಕಾರಿ.", "ಹತ್ತಿರದಲ್ಲಿ ಅದೇ ರಕ್ತ ಗುಂಪಿನ ಯಾರಾದರೂ ಇದ್ದರೆ ತಿಳಿಸಿ."],
+      "doNot": ["ಮನೆ ಔಷಧಿಯಿಂದ ರಕ್ತಸ್ರಾವ ನಿಲ್ಲಿಸಲು ಪ್ರಯತ್ನಿಸಬೇಡಿ.", "ರಾತ್ರಿ ಅಥವಾ ಆಸ್ಪತ್ರೆ ದೂರ ಎಂದು ವಿಳಂಬ ಮಾಡಬೇಡಿ."]
+    }
+  },
+  {
+    "id": "WHO-MDS-002",
+    "topic": "preeclampsia",
+    "tags": ["severe_headache", "blurred_vision", "convulsions", "severe_swelling", "pregnancy", "emergency"],
+    "source": "WHO Recommendations on Prevention and Treatment of Pre-eclampsia and Eclampsia",
+    "sourceUrl": "https://www.who.int/publications/i/item/9789241548335",
+    "en": {
+      "title": "Severe headache with vision changes or swelling (pre-eclampsia warning)",
+      "body": "A severe headache that does not go away, blurred or flashing vision, and sudden swelling of the face or hands during pregnancy can be signs of pre-eclampsia — a condition where blood pressure rises dangerously. Left untreated, it can lead to convulsions (eclampsia), organ damage, or death. Pre-eclampsia is the second most common cause of maternal death worldwide. Early detection and medical management save lives.",
+      "whatToDo": ["Go to a health facility immediately — this needs a blood pressure check.", "Do not take painkillers and assume the headache will pass.", "Tell the health worker exactly when the headache started and whether you have seen spots or flashes.", "If you have had a convulsion (fit), someone should call 108 immediately and stay with you."],
+      "doNot": ["Do not wait for the next scheduled antenatal visit.", "Do not assume swelling is just a normal part of pregnancy — sudden face or hand swelling is different from gradual foot swelling."]
+    },
+    "hi": {
+      "title": "गंभीर सिरदर्द और दृष्टि में बदलाव या सूजन (प्री-एक्लेम्पसिया की चेतावनी)",
+      "body": "गर्भावस्था में ऐसा तेज़ सिरदर्द जो ठीक न हो, धुंधला दिखना या चमकती रोशनी, और चेहरे या हाथों में अचानक सूजन प्री-एक्लेम्पसिया के संकेत हो सकते हैं — एक ऐसी स्थिति जहां रक्तचाप खतरनाक स्तर तक बढ़ जाता है। बिना इलाज यह दौरे (एक्लेम्पसिया), अंग क्षति या मृत्यु का कारण बन सकती है। समय पर पहचान और चिकित्सा जानें बचाती है।",
+      "whatToDo": ["तुरंत स्वास्थ्य केंद्र जाएं — रक्तचाप जांच ज़रूरी है।", "दर्द की दवाई लेकर यह न सोचें कि सिरदर्द अपने आप ठीक हो जाएगा।", "स्वास्थ्य कर्मी को बताएं कि सिरदर्द कब शुरू हुआ और क्या आपने चमकती रोशनी देखी।", "अगर दौरा पड़ा है तो 108 तुरंत कॉल करें और मरीज़ के पास रहें।"],
+      "doNot": ["अगली प्रसवपूर्व जांच तक इंतज़ार न करें।", "सूजन को गर्भावस्था का सामान्य हिस्सा न समझें — चेहरे/हाथों की अचानक सूजन अलग है।"]
+    },
+    "kn": {
+      "title": "ತೀವ್ರ ತಲೆನೋವು ಮತ್ತು ದೃಷ್ಟಿ ಬದಲಾವಣೆ ಅಥವಾ ಊತ (ಪ್ರಿ-ಎಕ್ಲಾಂಪ್ಸಿಯಾ ಎಚ್ಚರಿಕೆ)",
+      "body": "ಗರ್ಭಧಾರಣೆ ಸಮಯದಲ್ಲಿ ಹೋಗದ ತೀವ್ರ ತಲೆನೋವು, ಮಸುಕಾದ ಅಥವಾ ಮಿನುಗುವ ದೃಷ್ಟಿ, ಮತ್ತು ಮುಖ ಅಥವಾ ಕೈಗಳ ಅಚಾನಕ ಊತ — ಇವು ಪ್ರಿ-ಎಕ್ಲಾಂಪ್ಸಿಯಾದ ಲಕ್ಷಣಗಳಾಗಿರಬಹುದು. ಚಿಕಿತ್ಸೆ ಇಲ್ಲದೆ ಇದು ಸೆಳೆತ, ಅಂಗಾಂಗ ಹಾನಿ ಅಥವಾ ಮರಣಕ್ಕೆ ಕಾರಣವಾಗಬಹುದು. ಸಮಯಕ್ಕೆ ಗುರುತಿಸಿದರೆ ಜೀವ ಉಳಿಸಬಹುದು.",
+      "whatToDo": ["ತಕ್ಷಣ ಆರೋಗ್ಯ ಕೇಂದ್ರಕ್ಕೆ ಹೋಗಿ — ರಕ್ತದೊತ್ತಡ ಪರೀಕ್ಷೆ ಅಗತ್ಯ.", "ನೋವು ಮಾತ್ರೆ ತೆಗೆದುಕೊಂಡು ತಲೆನೋವು ಹೋಗುತ್ತೆ ಎಂದು ಭಾವಿಸಬೇಡಿ.", "ತಲೆನೋವು ಯಾವಾಗ ಶುರುವಾಯಿತು ಮತ್ತು ಮಿನುಗುವ ಬೆಳಕು ಕಾಣಿತೇ ಎಂದು ಆರೋಗ್ಯ ಕಾರ್ಯಕರ್ತರಿಗೆ ತಿಳಿಸಿ.", "ಸೆಳೆತ ಉಂಟಾಗಿದ್ದರೆ 108 ಕರೆ ಮಾಡಿ ರೋಗಿ ಬಳಿ ಇರಿ."],
+      "doNot": ["ಮುಂದಿನ ಗರ್ಭಪೂರ್ವ ಭೇಟಿಯವರೆಗೆ ಕಾಯಬೇಡಿ.", "ಊತ ಗರ್ಭಧಾರಣೆಯ ಸಾಮಾನ್ಯ ಭಾಗ ಎಂದು ತೀರ್ಮಾನಿಸಬೇಡಿ."]
+    }
+  },
+  {
+    "id": "WHO-ANM-001",
+    "topic": "anaemia",
+    "tags": ["fatigue", "dizziness", "anaemia", "pallor", "iron"],
+    "source": "WHO Anaemia Fact Sheet / MOHFW National Iron Plus Initiative",
+    "sourceUrl": "https://anaemiaalliance.who.int/newsroom/questions-and-answers/details/about-anaemia",
+    "en": {
+      "title": "Understanding anaemia: what it is and why it matters",
+      "body": "Anaemia is a condition where your blood does not have enough haemoglobin to carry oxygen to your body. It can cause constant tiredness, dizziness, pale skin and eyelids, breathlessness, and difficulty concentrating. Globally, around 40% of children aged 6–59 months, 37% of pregnant women, and 30% of women aged 15–49 are affected. In India, anaemia is especially common among adolescent girls and women — often linked to iron-poor diets and heavy menstrual bleeding. Severe anaemia in pregnancy raises the risk of postpartum haemorrhage and maternal death.",
+      "whatToDo": ["Get a blood test (haemoglobin test) — this is the only way to confirm anaemia.", "Eat iron-rich foods: dark leafy greens (spinach, fenugreek), jaggery, legumes, dates, and ragi.", "Take iron-folic acid tablets if a health worker prescribes them — complete the full course.", "Pair iron-rich foods with vitamin C (lemon, amla, orange) to help absorption.", "If you are pregnant, get your haemoglobin checked at every antenatal visit."],
+      "doNot": ["Do not assume tiredness is just part of being a woman or being pregnant.", "Do not self-diagnose anaemia from a phone screen — a blood test is the only reliable method."]
+    },
+    "hi": {
+      "title": "एनीमिया को समझें: यह क्या है और क्यों ज़रूरी है",
+      "body": "एनीमिया एक ऐसी स्थिति है जहां आपके खून में पर्याप्त हीमोग्लोबिन नहीं होता। इससे लगातार थकान, चक्कर, पीली त्वचा और पलकें, सांस फूलना हो सकता है। भारत में किशोरियों और महिलाओं में एनीमिया बहुत आम है — अक्सर आयरन की कमी वाले भोजन और अधिक मासिक रक्तस्राव से जुड़ा है। गर्भावस्था में गंभीर एनीमिया से प्रसवोत्तर रक्तस्राव का खतरा बढ़ जाता है।",
+      "whatToDo": ["खून की जांच (हीमोग्लोबिन टेस्ट) करवाएं — एनीमिया पुष्टि का यही एकमात्र तरीका है।", "आयरन युक्त भोजन खाएं: हरी पत्तेदार सब्ज़ियां (पालक, मेथी), गुड़, दालें, खजूर।", "अगर स्वास्थ्य कर्मी आयरन-फोलिक एसिड की गोलियां दें तो पूरा कोर्स करें।", "आयरन वाले भोजन के साथ विटामिन C (नींबू, आंवला, संतरा) लें।", "गर्भवती हैं तो हर प्रसवपूर्व जांच में हीमोग्लोबिन चेक करवाएं।"],
+      "doNot": ["थकान को महिला होने या गर्भवती होने का सामान्य हिस्सा न समझें।", "फोन स्क्रीन से एनीमिया का निदान न करें — रक्त जांच ही विश्वसनीय तरीका है।"]
+    },
+    "kn": {
+      "title": "ರಕ್ತಹೀನತೆ ಅರ್ಥಮಾಡಿಕೊಳ್ಳಿ: ಇದು ಏನು ಮತ್ತು ಏಕೆ ಮುಖ್ಯ",
+      "body": "ರಕ್ತಹೀನತೆ ಎಂದರೆ ನಿಮ್ಮ ರಕ್ತದಲ್ಲಿ ಸಾಕಷ್ಟು ಹಿಮೋಗ್ಲೋಬಿನ್ ಇಲ್ಲ. ಇದರಿಂದ ನಿರಂತರ ಆಯಾಸ, ತಲೆ ಸುತ್ತುವಿಕೆ, ಬಿಳಿಚಿದ ಚರ್ಮ ಮತ್ತು ಕಣ್ಣಿನ ರೆಪ್ಪೆ, ಉಸಿರಾಟದ ತೊಂದರೆ ಆಗಬಹುದು. ಭಾರತದಲ್ಲಿ ಹದಿಹರೆಯದ ಹುಡುಗಿಯರು ಮತ್ತು ಮಹಿಳೆಯರಲ್ಲಿ ರಕ್ತಹೀನತೆ ಸಾಮಾನ್ಯ — ಕಬ್ಬಿಣಾಂಶ ಕಡಿಮೆ ಆಹಾರ ಮತ್ತು ಹೆಚ್ಚು ಮುಟ್ಟಿನ ರಕ್ತಸ್ರಾವ ಇದಕ್ಕೆ ಕಾರಣ.",
+      "whatToDo": ["ರಕ್ತ ಪರೀಕ್ಷೆ (ಹಿಮೋಗ್ಲೋಬಿನ್ ಟೆಸ್ಟ್) ಮಾಡಿಸಿ — ರಕ್ತಹೀನತೆ ಖಚಿತಪಡಿಸಲು ಇದೊಂದೇ ದಾರಿ.", "ಕಬ್ಬಿಣಾಂಶ ಹೆಚ್ಚಿರುವ ಆಹಾರ: ಸೊಪ್ಪು, ಬೆಲ್ಲ, ಬೇಳೆಕಾಳುಗಳು, ಖರ್ಜೂರ, ರಾಗಿ.", "ಆರೋಗ್ಯ ಕಾರ್ಯಕರ್ತ ಸೂಚಿಸಿದರೆ ಕಬ್ಬಿಣ-ಫೋಲಿಕ್ ಆಮ್ಲ ಮಾತ್ರೆಗಳನ್ನು ಪೂರ್ಣ ಕೋರ್ಸ್ ತೆಗೆದುಕೊಳ್ಳಿ.", "ಕಬ್ಬಿಣಾಂಶ ಆಹಾರದ ಜೊತೆ ವಿಟಮಿನ್ C (ನಿಂಬೆ, ನೆಲ್ಲಿಕಾಯಿ, ಕಿತ್ತಳೆ) ತೆಗೆದುಕೊಳ್ಳಿ.", "ಗರ್ಭಿಣಿಯಾಗಿದ್ದರೆ ಪ್ರತಿ ಗರ್ಭಪೂರ್ವ ಭೇಟಿಯಲ್ಲಿ ಹಿಮೋಗ್ಲೋಬಿನ್ ಪರೀಕ್ಷೆ ಮಾಡಿಸಿ."],
+      "doNot": ["ಆಯಾಸವನ್ನು ಹೆಣ್ಣಾಗಿರುವ ಅಥವಾ ಗರ್ಭಿಣಿಯಾಗಿರುವ ಸಾಮಾನ್ಯ ಭಾಗ ಎಂದು ಭಾವಿಸಬೇಡಿ.", "ಫೋನ್ ಸ್ಕ್ರೀನ್‌ನಿಂದ ರಕ್ತಹೀನತೆ ಪತ್ತೆ ಮಾಡಬೇಡಿ — ರಕ್ತ ಪರೀಕ್ಷೆಯೊಂದೇ ವಿಶ್ವಾಸಾರ್ಹ."]
+    }
+  },
+  {
+    "id": "NHM-MH-001",
+    "topic": "menstrual_health",
+    "tags": ["severe_period_pain", "heavy_bleeding_hourly", "menstrual", "period", "cramps"],
+    "source": "MOHFW/NHM Training Module for ASHA on Menstrual Hygiene",
+    "sourceUrl": "https://www.nhm.gov.in/images/pdf/programmes/mhs/Training_Materials/PDF_English/Training_module.pdf",
+    "en": {
+      "title": "Menstrual pain and heavy periods: when to get help",
+      "body": "Menstrual cramps are common, but pain that regularly stops you from working, studying, or daily activities is not something you should just endure. Heavy bleeding — soaking a pad or cloth every hour for two or more hours — needs medical attention. Periods that are very irregular, have stopped for more than three months (when you are not pregnant), or come with foul-smelling discharge should also be checked by a health worker. The ASHA in your area can help connect you to the right care.",
+      "whatToDo": ["Track your cycle: note when it starts, how many days it lasts, and how heavy the flow is.", "For cramps: a warm compress on the lower abdomen and rest can help.", "If pain is severe and recurring, visit a health centre — do not just take painkillers every month.", "Talk to the ASHA worker or ANM in your village — they are trained to help with menstrual health.", "Use clean materials for menstrual protection (pads, cloth) and change regularly."],
+      "doNot": ["Do not feel ashamed to talk about your periods — it is a normal body process.", "Do not assume severe period pain is just something women must live with."]
+    },
+    "hi": {
+      "title": "मासिक दर्द और अधिक रक्तस्राव: कब मदद लें",
+      "body": "मासिक ऐंठन आम है, लेकिन ऐसा दर्द जो बार-बार काम, पढ़ाई या दैनिक गतिविधियों में बाधा डाले — इसे सहना ज़रूरी नहीं। अगर हर घंटे पैड भीग जाए तो चिकित्सा सहायता लें। अनियमित पीरियड्स, तीन महीने से ज़्यादा बंद (बिना गर्भावस्था), या बदबूदार स्राव — ये सब जांच करवाने योग्य हैं। आपके क्षेत्र की आशा कार्यकर्ता सही देखभाल से जोड़ सकती हैं।",
+      "whatToDo": ["अपने चक्र पर नज़र रखें: कब शुरू होता है, कितने दिन चलता है, कितना भारी है।", "ऐंठन के लिए: पेट के निचले हिस्से पर गर्म सिकाई और आराम मदद करता है।", "अगर दर्द गंभीर और बार-बार हो तो स्वास्थ्य केंद्र जाएं — हर महीने सिर्फ दर्दनिवारक न लें।", "अपने गांव की आशा कार्यकर्ता या ANM से बात करें।", "स्वच्छ सामग्री (पैड, कपड़ा) उपयोग करें और नियमित रूप से बदलें।"],
+      "doNot": ["पीरियड्स के बारे में बात करने में शर्म न करें — यह शरीर की सामान्य प्रक्रिया है।", "गंभीर दर्द को महिलाओं की नियति न मानें।"]
+    },
+    "kn": {
+      "title": "ಮುಟ್ಟಿನ ನೋವು ಮತ್ತು ಅತಿ ರಕ್ತಸ್ರಾವ: ಯಾವಾಗ ಸಹಾಯ ಪಡೆಯಬೇಕು",
+      "body": "ಮುಟ್ಟಿನ ಸೆಳೆತ ಸಾಮಾನ್ಯ, ಆದರೆ ಪ್ರತಿ ಬಾರಿ ಕೆಲಸ ಅಥವಾ ದೈನಂದಿನ ಚಟುವಟಿಕೆಗೆ ಅಡ್ಡಿಯಾಗುವ ನೋವನ್ನು ಸಹಿಸಬೇಕಿಲ್ಲ. ಪ್ರತಿ ಗಂಟೆಗೂ ಪ್ಯಾಡ್ ತೊಯ್ಯುವಷ್ಟು ಭಾರೀ ರಕ್ತಸ್ರಾವಕ್ಕೆ ವೈದ್ಯಕೀಯ ಗಮನ ಬೇಕು. ನಿಮ್ಮ ಪ್ರದೇಶದ ಆಶಾ ಕಾರ್ಯಕರ್ತೆ ಸರಿಯಾದ ಆರೈಕೆಗೆ ನಿಮ್ಮನ್ನು ಸಂಪರ್ಕಿಸಬಹುದು.",
+      "whatToDo": ["ನಿಮ್ಮ ಚಕ್ರ ಟ್ರ್ಯಾಕ್ ಮಾಡಿ: ಯಾವಾಗ ಶುರುವಾಗುತ್ತೆ, ಎಷ್ಟು ದಿನ, ಎಷ್ಟು ಭಾರೀ.", "ಸೆಳೆತಕ್ಕೆ: ಹೊಟ್ಟೆಯ ಕೆಳಭಾಗದಲ್ಲಿ ಬೆಚ್ಚಗಿನ ಶಾಖ ಮತ್ತು ವಿಶ್ರಾಂತಿ.", "ತೀವ್ರ ಮತ್ತು ಮರುಕಳಿಸುವ ನೋವಿದ್ದರೆ ಆರೋಗ್ಯ ಕೇಂದ್ರಕ್ಕೆ ಭೇಟಿ ನೀಡಿ.", "ನಿಮ್ಮ ಹಳ್ಳಿಯ ಆಶಾ ಕಾರ್ಯಕರ್ತೆ ಅಥವಾ ANM ಜೊತೆ ಮಾತನಾಡಿ.", "ಶುಚಿಯಾದ ಸಾಮಗ್ರಿ (ಪ್ಯಾಡ್, ಬಟ್ಟೆ) ಬಳಸಿ ಮತ್ತು ನಿಯಮಿತವಾಗಿ ಬದಲಿಸಿ."],
+      "doNot": ["ಮುಟ್ಟಿನ ಬಗ್ಗೆ ಮಾತನಾಡಲು ನಾಚಿಕೆ ಪಡಬೇಡಿ.", "ತೀವ್ರ ನೋವನ್ನು ಮಹಿಳೆಯರ ಅನಿವಾರ್ಯ ಎಂದು ಭಾವಿಸಬೇಡಿ."]
+    }
+  },
+  {
+    "id": "WHO-GEN-001",
+    "topic": "fever",
+    "tags": ["fever", "high_fever", "stiff_neck"],
+    "source": "WHO IMNCI / MOHFW Guidelines on Fever Management",
+    "sourceUrl": "https://www.who.int/health-topics/meningitis",
+    "en": {
+      "title": "Fever: when it's routine and when it's urgent",
+      "body": "Fever is the body's response to infection. Most fevers resolve in 2–3 days with rest and fluids. However, fever lasting more than 3 days, very high fever, or fever combined with a stiff neck (which can indicate meningitis), confusion, rash, or breathlessness needs medical attention. In areas where malaria or dengue are common, any fever should be tested early.",
+      "whatToDo": ["Rest and drink fluids — water, ORS, coconut water, buttermilk.", "Monitor your temperature if you have a thermometer.", "If fever lasts more than 3 days, visit a health centre for testing.", "If you also have a stiff neck, confusion, or rash: go to the hospital immediately.", "If pregnant with fever: visit the health facility the same day — fever in pregnancy needs evaluation."],
+      "doNot": ["Do not ignore fever that lasts more than 3 days.", "Do not use antibiotics without a health worker's prescription."]
+    },
+    "hi": {
+      "title": "बुखार: कब सामान्य और कब गंभीर",
+      "body": "बुखार संक्रमण के प्रति शरीर की प्रतिक्रिया है। ज़्यादातर बुखार 2-3 दिनों में आराम और पानी से ठीक हो जाता है। लेकिन 3 दिन से ज़्यादा बुखार, बहुत तेज़ बुखार, या बुखार के साथ गर्दन में अकड़न, भ्रम, चकत्ते या सांस फूलना — ये सब चिकित्सा ध्यान मांगते हैं।",
+      "whatToDo": ["आराम करें और पानी पिएं — पानी, ORS, नारियल पानी, छाछ।", "थर्मामीटर से तापमान पर नज़र रखें।", "3 दिन से ज़्यादा बुखार रहे तो जांच के लिए स्वास्थ्य केंद्र जाएं।", "गर्दन में अकड़न, भ्रम या चकत्ते हों तो तुरंत अस्पताल जाएं।", "गर्भावस्था में बुखार हो तो उसी दिन स्वास्थ्य केंद्र जाएं।"],
+      "doNot": ["3 दिन से ज़्यादा बुखार को अनदेखा न करें।", "बिना स्वास्थ्य कर्मी की सलाह के एंटीबायोटिक न लें।"]
+    },
+    "kn": {
+      "title": "ಜ್ವರ: ಯಾವಾಗ ಸಾಮಾನ್ಯ ಮತ್ತು ಯಾವಾಗ ತುರ್ತು",
+      "body": "ಜ್ವರ ಎಂದರೆ ಸೋಂಕಿಗೆ ದೇಹದ ಪ್ರತಿಕ್ರಿಯೆ. ಬಹುತೇಕ ಜ್ವರ 2-3 ದಿನಗಳಲ್ಲಿ ವಿಶ್ರಾಂತಿ ಮತ್ತು ದ್ರವಗಳಿಂದ ಕಡಿಮೆಯಾಗುತ್ತದೆ. ಆದರೆ 3 ದಿನಕ್ಕಿಂತ ಹೆಚ್ಚು, ಅತಿ ಹೆಚ್ಚಿನ ಜ್ವರ, ಅಥವಾ ಕುತ್ತಿಗೆ ಬಿಗಿತ, ಗೊಂದಲ, ದದ್ದು ಅಥವಾ ಉಸಿರಾಟದ ತೊಂದರೆ ಜೊತೆ ಇದ್ದರೆ ವೈದ್ಯಕೀಯ ಗಮನ ಬೇಕು.",
+      "whatToDo": ["ವಿಶ್ರಾಂತಿ ಪಡೆದು ದ್ರವಗಳನ್ನು ಕುಡಿಯಿರಿ — ನೀರು, ORS, ಎಳನೀರು.", "ಥರ್ಮಾಮೀಟರ್ ಇದ್ದರೆ ಉಷ್ಣತೆ ಗಮನಿಸಿ.", "3 ದಿನ ಮೀರಿದ ಜ್ವರಕ್ಕೆ ಆರೋಗ್ಯ ಕೇಂದ್ರಕ್ಕೆ ಭೇಟಿ ನೀಡಿ.", "ಕುತ್ತಿಗೆ ಬಿಗಿತ, ಗೊಂದಲ ಅಥವಾ ದದ್ದು ಇದ್ದರೆ ತಕ್ಷಣ ಆಸ್ಪತ್ರೆಗೆ ಹೋಗಿ.", "ಗರ್ಭಿಣಿಯಾಗಿದ್ದು ಜ್ವರ ಬಂದರೆ ಅದೇ ದಿನ ಆರೋಗ್ಯ ಕೇಂದ್ರಕ್ಕೆ ಹೋಗಿ."],
+      "doNot": ["3 ದಿನಕ್ಕಿಂತ ಹೆಚ್ಚಿನ ಜ್ವರವನ್ನು ನಿರ್ಲಕ್ಷಿಸಬೇಡಿ.", "ಆರೋಗ್ಯ ಕಾರ್ಯಕರ್ತರ ಸೂಚನೆ ಇಲ್ಲದೆ ಆಂಟಿಬಯೋಟಿಕ್ ಬಳಸಬೇಡಿ."]
+    }
+  },
+  {
+    "id": "WHO-GEN-002",
+    "topic": "dehydration",
+    "tags": ["diarrhea", "vomiting", "dehydration_signs"],
+    "source": "WHO ORS / Diarrhoea Management Guidelines",
+    "sourceUrl": "https://www.who.int/health-topics/diarrhoea",
+    "en": {
+      "title": "Diarrhoea and dehydration: recognise it early",
+      "body": "Diarrhoea and vomiting cause rapid fluid loss. In children, pregnant women, and elderly people, dehydration can become dangerous quickly. Signs of dehydration include very little or dark urine, sunken eyes, dry mouth, extreme thirst, and feeling weak or dizzy. Oral Rehydration Solution (ORS) is the single most important treatment — it replaces lost salts and water.",
+      "whatToDo": ["Start ORS immediately — if no ORS packets, mix 6 level teaspoons of sugar and half a teaspoon of salt in 1 litre of clean water.", "Sip small amounts frequently rather than large gulps.", "Continue breastfeeding if the patient is a breastfeeding infant.", "If signs of dehydration appear (sunken eyes, very little urine), go to the health facility.", "Continue eating light food if you can keep it down — rice water, bananas, curd-rice."],
+      "doNot": ["Do not give sugary drinks like cola or packaged juice — they worsen diarrhoea.", "Do not use anti-diarrhoeal drugs without medical advice.", "Do not wait for dehydration to become severe before seeking help."]
+    },
+    "hi": {
+      "title": "दस्त और निर्जलीकरण: जल्दी पहचानें",
+      "body": "दस्त और उल्टी से तेज़ी से शरीर का पानी कम होता है। बच्चों, गर्भवती महिलाओं और बुज़ुर्गों में निर्जलीकरण जल्दी खतरनाक हो सकता है। ORS सबसे ज़रूरी इलाज है।",
+      "whatToDo": ["तुरंत ORS शुरू करें — पैकेट न हो तो 1 लीटर साफ पानी में 6 चम्मच चीनी, आधा चम्मच नमक मिलाएं।", "बड़े घूंट की बजाय थोड़ा-थोड़ा बार-बार पिएं।", "शिशु स्तनपान कर रहा है तो स्तनपान जारी रखें।", "धंसी आंखें, बहुत कम पेशाब दिखे तो स्वास्थ्य केंद्र जाएं।", "हल्का भोजन खाना जारी रखें — चावल का पानी, केला, दही-चावल।"],
+      "doNot": ["कोला या पैकेज्ड जूस जैसे मीठे पेय न दें — ये दस्त बढ़ाते हैं।", "बिना चिकित्सा सलाह दस्त रोकने की दवाई न लें।", "निर्जलीकरण गंभीर होने तक इंतज़ार न करें।"]
+    },
+    "kn": {
+      "title": "ಅತಿಸಾರ ಮತ್ತು ನಿರ್ಜಲೀಕರಣ: ಬೇಗ ಗುರುತಿಸಿ",
+      "body": "ಅತಿಸಾರ ಮತ್ತು ವಾಂತಿಯಿಂದ ದೇಹದ ನೀರಿನ ಅಂಶ ವೇಗವಾಗಿ ಕಡಿಮೆಯಾಗುತ್ತದೆ. ಮಕ್ಕಳು, ಗರ್ಭಿಣಿ ಮಹಿಳೆಯರು ಮತ್ತು ಹಿರಿಯರಲ್ಲಿ ನಿರ್ಜಲೀಕರಣ ಬೇಗ ಅಪಾಯಕಾರಿಯಾಗಬಹುದು. ORS ಅತ್ಯಂತ ಮುಖ್ಯ ಚಿಕಿತ್ಸೆ.",
+      "whatToDo": ["ತಕ್ಷಣ ORS ಶುರು ಮಾಡಿ — ORS ಪ್ಯಾಕೆಟ್ ಇಲ್ಲದಿದ್ದರೆ 1 ಲೀಟರ್ ಶುದ್ಧ ನೀರಿಗೆ 6 ಚಮಚ ಸಕ್ಕರೆ, ಅರ್ಧ ಚಮಚ ಉಪ್ಪು ಬೆರೆಸಿ.", "ದೊಡ್ಡ ಗುಟುಕು ಬದಲಿಗೆ ಸ್ವಲ್ಪ ಸ್ವಲ್ಪವಾಗಿ ಪದೇ ಪದೇ ಕುಡಿಯಿರಿ.", "ಶಿಶು ಎದೆಹಾಲು ಕುಡಿಯುತ್ತಿದ್ದರೆ ಎದೆಹಾಲು ಮುಂದುವರಿಸಿ.", "ಒಳಸೇರಿದ ಕಣ್ಣುಗಳು, ಕಡಿಮೆ ಮೂತ್ರ ಕಂಡರೆ ಆರೋಗ್ಯ ಕೇಂದ್ರಕ್ಕೆ ಹೋಗಿ.", "ಹಗುರ ಆಹಾರ — ಅಕ್ಕಿ ನೀರು, ಬಾಳೆಹಣ್ಣು, ಮೊಸರನ್ನ ಮುಂದುವರಿಸಿ."],
+      "doNot": ["ಕೋಲಾ ಅಥವಾ ಪ್ಯಾಕೆಟ್ ಜ್ಯೂಸ್ ನೀಡಬೇಡಿ — ಅತಿಸಾರ ಹೆಚ್ಚಿಸುತ್ತದೆ.", "ವೈದ್ಯಕೀಯ ಸಲಹೆ ಇಲ್ಲದೆ ಅತಿಸಾರ ನಿಲ್ಲಿಸುವ ಔಷಧಿ ಬಳಸಬೇಡಿ.", "ನಿರ್ಜಲೀಕರಣ ತೀವ್ರವಾಗುವವರೆಗೆ ಕಾಯಬೇಡಿ."]
+    }
+  },
+  {
+    "id": "WHO-GEN-003",
+    "topic": "chest_pain",
+    "tags": ["chest_pain", "breathlessness", "emergency"],
+    "source": "WHO Cardiovascular Disease Fact Sheet",
+    "sourceUrl": "https://www.who.int/health-topics/cardiovascular-diseases",
+    "en": {
+      "title": "Chest pain: always treat it as urgent",
+      "body": "Chest pain, especially with breathlessness, sweating, or pain spreading to the arm, jaw, or back, can indicate a heart attack or other serious condition. This applies to women too — heart disease is not only a men's problem. Cardiovascular diseases are the leading cause of death globally. Even in young women, chest pain with breathlessness should never be ignored.",
+      "whatToDo": ["Call 108 or 112 immediately — do not drive yourself.", "Sit upright or in whatever position makes breathing easiest.", "If available, chew one aspirin tablet (not swallow whole).", "Tell the emergency team exactly when the pain started and where it is."],
+      "doNot": ["Do not wait to see if it passes.", "Do not assume you are too young for heart problems.", "Do not lie flat if you are having difficulty breathing."]
+    },
+    "hi": {
+      "title": "सीने में दर्द: हमेशा गंभीरता से लें",
+      "body": "सीने में दर्द, विशेषकर सांस फूलना, पसीना, या दर्द का बांह, जबड़े या पीठ तक फैलना — यह दिल का दौरा हो सकता है। यह महिलाओं में भी होता है। हृदय रोग दुनिया भर में मृत्यु का प्रमुख कारण है।",
+      "whatToDo": ["तुरंत 108 या 112 कॉल करें — खुद गाड़ी न चलाएं।", "सीधे बैठें या जिस स्थिति में सांस आसान हो।", "उपलब्ध हो तो एक एस्पिरिन चबाकर खाएं।", "आपातकालीन टीम को बताएं कि दर्द कब शुरू हुआ और कहां है।"],
+      "doNot": ["यह देखने के लिए इंतज़ार न करें कि दर्द अपने आप ठीक होगा।", "यह न सोचें कि आप हृदय समस्या के लिए बहुत जवान हैं।"]
+    },
+    "kn": {
+      "title": "ಎದೆ ನೋವು: ಯಾವಾಗಲೂ ತುರ್ತು ಎಂದು ಪರಿಗಣಿಸಿ",
+      "body": "ಎದೆ ನೋವು, ವಿಶೇಷವಾಗಿ ಉಸಿರಾಟದ ತೊಂದರೆ, ಬೆವರು, ಅಥವಾ ತೋಳು, ದವಡೆ ಅಥವಾ ಬೆನ್ನಿಗೆ ಹರಡುವ ನೋವು — ಹೃದಯಾಘಾತ ಸೂಚಿಸಬಹುದು. ಹೃದಯ ಕಾಯಿಲೆ ಜಾಗತಿಕವಾಗಿ ಮರಣದ ಪ್ರಮುಖ ಕಾರಣ.",
+      "whatToDo": ["ತಕ್ಷಣ 108 ಅಥವಾ 112 ಕರೆ ಮಾಡಿ — ಸ್ವತಃ ವಾಹನ ಚಲಾಯಿಸಬೇಡಿ.", "ನೆಟ್ಟಗೆ ಕೂರಿ ಅಥವಾ ಉಸಿರಾಟ ಸುಲಭವಾಗುವ ಸ್ಥಾನದಲ್ಲಿ ಇರಿ.", "ಆಸ್ಪಿರಿನ್ ಲಭ್ಯವಿದ್ದರೆ ಒಂದು ಮಾತ್ರೆ ಜಗಿದು ತಿನ್ನಿ.", "ತುರ್ತು ತಂಡಕ್ಕೆ ನೋವು ಯಾವಾಗ ಶುರುವಾಯಿತು ಎಂದು ತಿಳಿಸಿ."],
+      "doNot": ["ನೋವು ತಾನೇ ಹೋಗುತ್ತೆ ಎಂದು ಕಾಯಬೇಡಿ.", "ಹೃದಯ ಸಮಸ್ಯೆಗೆ ತಾವು ತುಂಬಾ ಚಿಕ್ಕವರು ಎಂದು ಭಾವಿಸಬೇಡಿ."]
+    }
+  }
+]

@@ -1,0 +1,23 @@
+{
+  "name": "Sakhi — private health help",
+  "short_name": "Sakhi",
+  "description": "A private, voice-first health companion for women and girls. Free, anonymous, in your own language.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#FDF8F6",
+  "theme_color": "#B04A63",
+  "lang": "en",
+  "dir": "auto",
+  "categories": ["health", "medical"],
+  "icons": [
+    { "src": "/favicon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "/favicon-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "/favicon.svg", "sizes": "any", "type": "image/svg+xml" },
+    { "src": "/apple-touch-icon.png", "sizes": "180x180", "type": "image/png", "purpose": "maskable" }
+  ],
+  "shortcuts": [
+    { "name": "Call an ambulance", "url": "/nearby" },
+    { "name": "Check a symptom", "url": "/triage" }
+  ]
+}

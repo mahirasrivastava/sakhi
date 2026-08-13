@@ -1,0 +1,15 @@
+{
+  "name": "sakhi",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Sakhi — private, voice-first health triage for women and girls. Root convenience scripts only; the real packages are in client/ and server/.",
+  "scripts": {
+    "install:all": "npm --prefix server install && npm --prefix client install",
+    "dev:server": "npm --prefix server run dev",
+    "dev:client": "npm --prefix client run dev",
+    "seed:demo": "npm --prefix server run seed:demo",
+    "reset:demo": "npm --prefix server run reset:demo",
+    "accounts:list": "npm --prefix server run accounts:list",
+    "build": "npm --prefix client run build"
+  }
+}
