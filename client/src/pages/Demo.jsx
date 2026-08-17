@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useCallback } from "react";
 import { api } from "../api.js";
 import ResultCard from "../components/ResultCard.jsx";
+import Icon from "../components/Icon.jsx";
 
 const SCENARIOS = [
   {
@@ -86,9 +87,13 @@ export default function Demo() {
       </div>
 
       <div style={{ display: "flex", alignItems: "center", gap: 12, marginTop: 14 }}>
-        <button className="btn btn-ghost" onClick={() => setStep((s) => (s - 1 + SCENARIOS.length) % SCENARIOS.length)}>← Prev</button>
-        <button className="btn btn-ghost" onClick={() => setStep((s) => (s + 1) % SCENARIOS.length)}>Next →</button>
-        <label style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 13, color: "var(--ink-soft)", marginLeft: "auto" }}>
+        <button className="btn btn-ghost" onClick={() => setStep((s) => (s - 1 + SCENARIOS.length) % SCENARIOS.length)}>
+          <Icon name="arrowLeft" size={16} /> Prev
+        </button>
+        <button className="btn btn-ghost" onClick={() => setStep((s) => (s + 1) % SCENARIOS.length)}>
+          Next <Icon name="arrowRight" size={16} />
+        </button>
+        <label style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 13, color: "var(--ink-soft)", marginInlineStart: "auto" }}>
           <input type="checkbox" checked={autoPlay} onChange={(e) => setAutoPlay(e.target.checked)} />
           Auto-play
         </label>

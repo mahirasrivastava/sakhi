@@ -3,7 +3,9 @@ import { runSession } from "../orchestrator.js";
 import {
   getSessions, getSessionById, deleteSession, getImpactStats, redactForList,
 } from "../store.js";
-import { analyzePallor } from "./anaemia.js";
+import {
+  analyzePallor, SYMPTOM_OPTIONS as ANAEMIA_SYMPTOMS, RISK_OPTIONS as ANAEMIA_RISKS,
+} from "./anaemia.js";
 import { retrieveEducation, getCorpusSize } from "../vectorStore.js";
 import { requireAuth, requireCsrf, noStore } from "../security/middleware.js";
 import { verifyAccountPassword } from "../security/accounts.js";
@@ -92,10 +94,23 @@ router.post("/anaemia-screen", (req, res) => {
       ? Number(body.focusScore)
       : undefined;
 
+    // The checklist answers. Filtered against the server's own option lists so
+    // an arbitrary string in the payload cannot reach the scoring tables.
+    const validSymptoms = new Set(ANAEMIA_SYMPTOMS.map((o) => o.id));
+    const validRisks = new Set(ANAEMIA_RISKS.map((o) => o.id));
+    const symptoms = Array.isArray(body.symptoms)
+      ? body.symptoms.filter((s) => validSymptoms.has(s))
+      : [];
+    const risks = Array.isArray(body.risks)
+      ? body.risks.filter((r) => validRisks.has(r))
+      : [];
+
     const result = analyzePallor({
       frames,
       reference: sanitizePixels(body.reference, MAX_REFERENCE_PIXELS),
       focusScore,
+      symptoms,
+      risks,
     });
 
     // A capture that failed the quality gate is a client-correctable problem,
@@ -106,6 +121,12 @@ router.post("/anaemia-screen", (req, res) => {
     console.error("[anaemia]", err?.message);
     res.status(500).json({ error: "Anaemia screen failed." });
   }
+});
+
+// GET /api/anaemia-screen/questions — drives the checklist, so the labels and
+// the scoring weights can never drift apart.
+router.get("/anaemia-screen/questions", (req, res) => {
+  res.json({ symptoms: ANAEMIA_SYMPTOMS, risks: ANAEMIA_RISKS });
 });
 
 // GET /api/impact — aggregate counts only, no per-person data. Stays public so

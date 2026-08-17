@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import { useLanguage } from "../context/LanguageContext.jsx";
+import Icon from "./Icon.jsx";
 
 /**
  * Language picker for all 22 Eighth Schedule languages plus English.
@@ -56,9 +57,9 @@ export default function LanguagePicker() {
         aria-label={`Language: ${meta.english}. Change language`}
         className="util-btn"
       >
-        <span aria-hidden="true">🌐</span>
+        <Icon name="globe" size={14} />
         <span style={styles.triggerLabel}>{meta.endonym}</span>
-        <span aria-hidden="true" style={{ fontSize: 9, opacity: 0.7 }}>▼</span>
+        <Icon name="chevronDown" size={12} style={{ opacity: 0.75 }} />
       </button>
 
       {loading && <span style={styles.loading} role="status">…</span>}
@@ -100,7 +101,7 @@ export default function LanguagePicker() {
                       </span>
                     )}
                   </span>
-                  {active && <span aria-hidden="true" style={styles.tick}>✓</span>}
+                  {active && <Icon name="check" size={14} style={{ color: "var(--rose-deep)" }} />}
                 </button>
               );
             })}

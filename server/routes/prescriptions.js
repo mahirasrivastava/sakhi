@@ -2,12 +2,22 @@
 // Reads OCR'd prescription text and reports what it implies.
 //
 // PRIVACY
-// The image never reaches this server. OCR runs in the browser (tesseract.js),
-// and only the extracted text is posted here. Nothing is written to disk: the
-// text is analysed in-process and discarded when the response is sent. That is
-// the point — a prescription is among the most identifying health documents a
-// person has, and this app's whole premise is that a girl can use it without
-// creating a record of herself anywhere.
+// Two OCR paths, with materially different privacy properties:
+//
+//   On-device (tesseract.js) — the image never leaves the phone; only the
+//   extracted text is posted here. This is the fallback and is used whenever no
+//   cloud key is configured.
+//
+//   Cloud (/ocr below) — the image is relayed through this server to Google's
+//   Gemini or Cloud Vision API, because Tesseract cannot read handwriting well
+//   enough for the result to be trustworthy. The image is held in memory for
+//   the life of the request, forwarded once, and never written to disk or
+//   logged. This server exists in that path solely so the API key stays server-
+//   side; a key shipped in the client bundle is a key published to the world.
+//
+// Either way nothing is persisted here: text and image are analysed in-process
+// and discarded when the response is sent. A prescription is among the most
+// identifying health documents a person has.
 //
 // SAFETY
 // The analysis never tells anyone to start, stop or change a medicine. It says
@@ -18,10 +28,98 @@ import { Router } from "express";
 import {
   MEDICINES, CONDITIONS, FAMILY_RISK, FAMILY_HISTORY_OPTIONS,
 } from "../knowledge/medicines.js";
+import {
+  readPrescriptionImage, ocrStatus, isConfigured as ocrConfigured, OcrError,
+} from "../agents/visionOcr.js";
+import { createLimiter } from "../security/rateLimit.js";
 
 const router = Router();
 
 const MAX_TEXT = 20000;
+
+// Cloud OCR costs money per call and accepts a several-megabyte upload, so it
+// is the one endpoint here worth rate limiting on its own. Generous enough that
+// a person retaking a blurry photo four times never notices it.
+const ocrLimiter = createLimiter({ name: "prescription-ocr", windowMs: 10 * 60e3, max: 20 });
+
+// Decoded image ceiling. Base64 inflates by 4/3, so this must sit below the
+// express.json() body limit with room for the JSON envelope.
+const MAX_IMAGE_BYTES = 6 * 1024 * 1024;
+
+const ALLOWED_MIME = new Set(["image/jpeg", "image/png", "image/webp", "image/heic", "image/heif"]);
+
+// GET /api/prescriptions/ocr/status — lets the client choose its path and tell
+// the user, before they pick a file, where the image is going.
+router.get("/ocr/status", (req, res) => {
+  res.json(ocrStatus());
+});
+
+// POST /api/prescription/ocr — relay an image to the configured vision provider.
+router.post("/ocr", async (req, res) => {
+  // createLimiter returns a { check } object rather than middleware, matching
+  // how routes/auth.js applies it.
+  const { allowed, retryAfterMs } = ocrLimiter.check(req.clientIp || "unknown");
+  if (!allowed) {
+    res.setHeader("Retry-After", Math.ceil(retryAfterMs / 1000));
+    return res.status(429).json({
+      error: "Too many scans in a short time. Please wait a few minutes and try again.",
+      retryAfterSeconds: Math.ceil(retryAfterMs / 1000),
+      fallback: "tesseract",
+    });
+  }
+
+  if (!ocrConfigured()) {
+    // 503 rather than 500: this is a configuration state, not a fault, and the
+    // client's correct response is to fall back to on-device OCR.
+    return res.status(503).json({
+      error: "Cloud reading is not configured on this server.",
+      fallback: "tesseract",
+    });
+  }
+
+  const { imageBase64, mimeType } = req.body || {};
+
+  if (typeof imageBase64 !== "string" || imageBase64.length === 0) {
+    return res.status(400).json({ error: "An image is required." });
+  }
+  if (mimeType && !ALLOWED_MIME.has(mimeType)) {
+    return res.status(415).json({ error: "That image format is not supported." });
+  }
+
+  // Strip a data: prefix if the client sent one, then bound the size before
+  // decoding — decoding first would let a large payload allocate memory that
+  // the size check was meant to prevent.
+  const payload = imageBase64.includes(",") ? imageBase64.slice(imageBase64.indexOf(",") + 1) : imageBase64;
+  const approxBytes = Math.floor((payload.length * 3) / 4);
+  if (approxBytes > MAX_IMAGE_BYTES) {
+    return res.status(413).json({
+      error: "That image is too large. Please retake the photo — the app normally shrinks it first.",
+    });
+  }
+  if (!/^[A-Za-z0-9+/=\r\n]+$/.test(payload.slice(0, 4096))) {
+    return res.status(400).json({ error: "The image data was not valid base64." });
+  }
+
+  try {
+    const result = await readPrescriptionImage(payload, mimeType || "image/jpeg");
+    res.json(result);
+  } catch (err) {
+    if (err instanceof OcrError) {
+      // err.detail can carry the provider's own message. It is safe to surface
+      // (it never contains image content) and is the difference between a
+      // debuggable failure and "something went wrong".
+      return res.status(err.status).json({
+        error: err.message,
+        detail: err.detail || undefined,
+        fallback: "tesseract",
+      });
+    }
+    // Deliberately not logging the request body — it is a photograph of a
+    // medical document.
+    console.error("[prescription-ocr]", err.message);
+    res.status(502).json({ error: "The reading service failed.", fallback: "tesseract" });
+  }
+});
 
 // OCR of a handwritten or faxed prescription is noisy. Normalising aggressively
 // before matching recovers a lot of otherwise-missed names.

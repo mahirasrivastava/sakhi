@@ -229,9 +229,37 @@ input::placeholder, textarea::placeholder { color: var(--ink-muted); }
 .btn-ghost {
   background: transparent;
   color: var(--rose-deep);
-  border: 1.5px solid var(--rose-soft);
+  border: 1.5px solid var(--border-strong);
 }
-.btn-ghost:hover { background: var(--rose-soft); }
+.btn-ghost:hover { background: var(--rose-soft); border-color: var(--rose); }
+
+/* The one button that is allowed to shout. Reserved for dialling — nothing
+   else on the page competes with it, which is the whole point. */
+.btn-emergency {
+  background: var(--emergency);
+  color: #FFFFFF;
+  box-shadow: 0 4px 14px rgba(176, 52, 44, 0.28);
+}
+.btn-emergency:hover { filter: brightness(0.93); }
+
+/* Neutral, high-contrast action. Used inside cards where a rose button would
+   read as the page's primary call to action and isn't. */
+.btn-solid {
+  background: var(--ink);
+  color: var(--cream);
+}
+.btn-solid:hover { filter: brightness(1.15); }
+
+.btn-sm { padding: 8px 15px; font-size: 13.5px; }
+
+/* Icon-only control: square, so it never collapses to a sliver next to text. */
+.btn-icon {
+  width: 38px;
+  height: 38px;
+  padding: 0;
+  justify-content: center;
+  border-radius: 11px;
+}
 
 .card {
   background: var(--surface);
@@ -394,12 +422,80 @@ input::placeholder, textarea::placeholder { color: var(--ink-muted); }
   white-space: nowrap;
   border-bottom: 3px solid transparent;
 }
-.nav-link .nav-icon { font-size: 17px; line-height: 1; }
+.nav-link .nav-icon { display: flex; align-items: center; justify-content: center; }
 .nav-link:hover { background: var(--rose-soft); color: var(--rose-deep); }
 .nav-link.active {
   color: var(--rose-deep);
   background: var(--rose-soft);
   border-bottom-color: var(--rose);
+}
+
+/* --- grouped nav ---------------------------------------------------------
+   Five top-level items with dropdowns, replacing eleven flat links. The group
+   trigger is a <button>, not a link, because it navigates nowhere — that keeps
+   it out of the tab order as a false destination and lets it own aria-expanded. */
+.nav-group { position: relative; }
+
+.nav-group-trigger {
+  background: none;
+  border: none;
+  border-bottom: 3px solid transparent;
+  cursor: pointer;
+  font: inherit;
+  /* .nav-link stacks icon over label; the caret is a third row otherwise, so
+     the trigger switches to a row layout with the caret trailing the label. */
+  flex-direction: row;
+  gap: 5px;
+}
+.nav-group-trigger .nav-caret {
+  transition: transform 0.15s ease;
+  opacity: 0.6;
+}
+.nav-group.open .nav-group-trigger {
+  background: var(--rose-soft);
+  color: var(--rose-deep);
+}
+.nav-group.open .nav-caret { transform: rotate(180deg); }
+
+.nav-menu {
+  position: absolute;
+  top: calc(100% + 8px);
+  inset-inline-start: 0;
+  min-width: 280px;
+  padding: 7px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  box-shadow: 0 14px 38px rgba(0, 0, 0, 0.14);
+  z-index: 70;
+  display: none;
+}
+.nav-group.open .nav-menu { display: block; }
+
+.nav-menu-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 11px;
+  padding: 10px 11px;
+  border-radius: 10px;
+  text-decoration: none;
+  color: var(--ink);
+}
+.nav-menu-item:hover { background: var(--rose-soft); }
+.nav-menu-item.active { background: var(--rose-soft); color: var(--rose-deep); }
+.nav-menu-icon {
+  display: flex;
+  color: var(--rose-deep);
+  margin-top: 1px;
+  flex-shrink: 0;
+}
+.nav-menu-label { display: block; font-size: 13.5px; font-weight: 600; line-height: 1.3; }
+.nav-menu-blurb {
+  display: block;
+  font-size: 12px;
+  color: var(--ink-muted);
+  line-height: 1.45;
+  margin-top: 2px;
 }
 
 .staff-link {
@@ -415,12 +511,21 @@ input::placeholder, textarea::placeholder { color: var(--ink-muted); }
 }
 .staff-link:hover { background: var(--cream-dim); color: var(--rose-deep); }
 
-.sakhi-burger { display: none; background: none; border: none; font-size: 26px; color: var(--rose-deep); }
+.sakhi-burger {
+  display: none;
+  background: var(--surface);
+  border: 1px solid var(--border-strong);
+  border-radius: 11px;
+  padding: 8px;
+  color: var(--rose-deep);
+  align-items: center;
+  justify-content: center;
+}
 
 /* Below this width ten links cannot sit on one row at a legible size, so they
    become a proper menu rather than wrapping. */
 @media (max-width: 1180px) {
-  .sakhi-burger { display: block; }
+  .sakhi-burger { display: inline-flex; }
   .sakhi-nav {
     display: none;
     position: absolute;
@@ -448,9 +553,43 @@ input::placeholder, textarea::placeholder { color: var(--ink-muted); }
     border-left: 3px solid transparent;
     text-align: start;
   }
-  .nav-link .nav-icon { font-size: 21px; }
   .nav-link.active { border-left-color: var(--rose); }
   .staff-link { margin-left: 0; margin-top: 10px; text-align: center; padding: 12px; font-size: 15px; }
+
+  /* In the drawer there is no "outside" to click and nowhere to float to, so
+     the groups become inline sections that are always expanded. Making someone
+     tap a group open inside a menu they already tapped open is two taps to
+     reach anything. */
+  .nav-group { position: static; }
+  .nav-group-trigger {
+    width: 100%;
+    justify-content: flex-start;
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    color: var(--ink-muted);
+    padding: 14px 14px 6px;
+    pointer-events: none;      /* it is a heading here, not a control */
+    background: none;
+  }
+  .nav-group-trigger .nav-caret { display: none; }
+  .nav-group.open .nav-group-trigger { background: none; }
+
+  .nav-menu {
+    display: block;
+    position: static;
+    min-width: 0;
+    padding: 0;
+    border: none;
+    border-radius: 0;
+    box-shadow: none;
+    background: none;
+  }
+  .nav-menu-item { padding: 12px 14px; border-left: 3px solid transparent; border-radius: 0; }
+  .nav-menu-item.active { border-left-color: var(--rose); }
+  .nav-menu-label { font-size: 15.5px; }
+  .nav-menu-blurb { display: none; }  /* the drawer is already tall */
 }
 
 @media (max-width: 560px) {
@@ -508,7 +647,21 @@ input::placeholder, textarea::placeholder { color: var(--ink-muted); }
   color: var(--rose-deep);
   font-weight: 700;
 }
-.choice-icon { font-size: 22px; line-height: 1; flex-shrink: 0; }
+/* The icon medallion. A tinted disc rather than a bare glyph: at 14px of body
+   text a 20px line drawing floating next to a label reads as a smudge, and the
+   disc is also what gives the pressed state somewhere to change colour. */
+.choice-icon {
+  flex-shrink: 0;
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--cream-dim);
+  color: var(--rose-deep);
+}
+.choice[aria-pressed="true"] .choice-icon { background: var(--rose); color: var(--on-brand); }
 
 .field-input {
   width: 100%;
@@ -575,3 +728,668 @@ input::placeholder, textarea::placeholder { color: var(--ink-muted); }
   margin-right: 8px;
 }
 [dir="rtl"] ul, [dir="rtl"] ol { padding-left: 0; padding-right: 20px; }
+
+/* ---------------------------------------------------------------------------
+   On-screen Indic keyboard
+   ---------------------------------------------------------------------------
+   Docked to the bottom of the viewport and shared by every field, so only one
+   panel is ever mounted. Keys are deliberately large: this gets used one-handed,
+   outdoors, sometimes by someone who is unwell.
+--------------------------------------------------------------------------- */
+.script-field { position: relative; display: block; }
+
+.script-field-btn {
+  position: absolute;
+  bottom: 7px;
+  min-width: 30px;
+  height: 26px;
+  padding: 0 7px;
+  border-radius: 8px;
+  border: 1px solid var(--border-strong);
+  background: var(--surface-alt);
+  color: var(--ink-soft);
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0.85;
+}
+.script-field-btn:hover { opacity: 1; background: var(--rose-soft); color: var(--rose-deep); }
+.script-field-btn.is-active {
+  background: var(--rose);
+  border-color: var(--rose);
+  color: var(--on-brand);
+  opacity: 1;
+}
+
+/* Room for the button, so it never sits on top of what is being typed. */
+.script-field > input,
+.script-field > textarea { padding-inline-end: 44px; }
+
+.kbd {
+  position: fixed;
+  inset-inline: 0;
+  bottom: 0;
+  z-index: 90;
+  background: var(--surface);
+  border-top: 1px solid var(--border-strong);
+  box-shadow: 0 -8px 28px rgba(0, 0, 0, 0.13);
+  padding: 8px 10px calc(8px + env(safe-area-inset-bottom, 0px));
+  max-height: 52vh;
+  overflow-y: auto;
+}
+
+.kbd-bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 2px 7px;
+}
+.kbd-script {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--rose-deep);
+}
+.kbd-toggle {
+  border: 1px solid var(--border-strong);
+  background: var(--surface-alt);
+  color: var(--ink-soft);
+  border-radius: 999px;
+  padding: 4px 12px;
+  font-size: 12.5px;
+  font-weight: 600;
+}
+.kbd-toggle.is-on { background: var(--rose-soft); border-color: var(--rose); color: var(--rose-deep); }
+.kbd-close {
+  margin-inline-start: auto;
+  border: none;
+  background: none;
+  color: var(--ink-muted);
+  font-size: 15px;
+  padding: 4px 8px;
+}
+.kbd-hint {
+  margin: 0 2px 7px;
+  font-size: 11.5px;
+  line-height: 1.5;
+  color: var(--ink-muted);
+}
+
+.kbd-keys { display: grid; gap: 5px; }
+.kbd-row { display: flex; gap: 5px; justify-content: center; flex-wrap: wrap; }
+
+.kbd-key {
+  flex: 1 1 auto;
+  min-width: 38px;
+  max-width: 76px;
+  min-height: 42px;
+  padding: 4px 6px;
+  border-radius: 9px;
+  border: 1px solid var(--border);
+  background: var(--surface-alt);
+  color: var(--ink);
+  font-size: 19px;
+  line-height: 1.2;
+}
+.kbd-key:active { background: var(--rose-soft); color: var(--rose-deep); }
+
+.kbd-controls { margin-top: 7px; }
+.kbd-layer { font-size: 15px; font-weight: 600; max-width: 64px; }
+.kbd-layer.is-active { background: var(--rose-soft); border-color: var(--rose); color: var(--rose-deep); }
+.kbd-space { flex: 4 1 40%; max-width: none; font-size: 12.5px; font-weight: 600; color: var(--ink-soft); }
+.kbd-wide { flex: 1 1 auto; max-width: 74px; font-size: 17px; }
+
+/* Keep the field being typed into clear of the docked panel. */
+body.kbd-open { padding-bottom: 52vh; }
+
+@media (max-width: 640px) {
+  .kbd-key { min-width: 30px; font-size: 17px; min-height: 40px; }
+}
+
+/* ---------------------------------------------------------------------------
+   Service tiles
+   ---------------------------------------------------------------------------
+   The pattern the Indian government service apps converged on, and they
+   converged on it for a reason: a grid of equal, large, self-describing tiles,
+   each with a pictogram in a tinted square, a short name and a line of plain
+   language. Everything is visible at once and nothing hides behind a menu.
+
+   Every tile is the same height regardless of description length, because a
+   ragged grid reads as broken on a small screen — hence the flexed description
+   and the footer pinned to the bottom.
+--------------------------------------------------------------------------- */
+
+.tile-grid {
+  display: grid;
+  gap: 14px;
+  grid-template-columns: repeat(auto-fill, minmax(248px, 1fr));
+}
+
+.tile {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 20px;
+  min-height: 196px;
+  border-radius: 16px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: inherit;
+  text-decoration: none;
+  text-align: start;
+  box-shadow: 0 1px 2px rgba(43, 30, 34, 0.04);
+  transition: transform 0.16s ease, box-shadow 0.16s ease, border-color 0.16s ease;
+}
+.tile:hover {
+  transform: translateY(-2px);
+  border-color: var(--rose);
+  box-shadow: var(--shadow);
+}
+.tile:focus-visible { outline: 3px solid var(--gold); outline-offset: 2px; }
+
+.tile-mark {
+  width: 46px;
+  height: 46px;
+  border-radius: 13px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--rose-soft);
+  color: var(--rose-deep);
+}
+.tile-title {
+  font-family: var(--font-display);
+  font-size: 19px;
+  font-weight: 700;
+  color: var(--ink);
+  line-height: 1.25;
+}
+.tile-desc { font-size: 14px; color: var(--ink-soft); line-height: 1.55; flex: 1; }
+.tile-go {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13.5px;
+  font-weight: 700;
+  color: var(--rose);
+}
+
+/* Two escalations of the same tile. Border weight and mark colour only — a
+   different shape per state would make the grid stop reading as a grid. */
+.tile-primary { border-color: var(--rose); border-width: 2px; background: var(--surface-alt); }
+.tile-urgent { border-color: var(--emergency-border); border-width: 2px; }
+.tile-urgent .tile-mark { background: var(--pill-emergency-bg); color: var(--emergency); }
+.tile-urgent .tile-go { color: var(--emergency); }
+
+/* ---------------------------------------------------------------------------
+   Section headings
+   ---------------------------------------------------------------------------
+   The rule and the small uppercase eyebrow are what make a long page scan as a
+   document with parts rather than a scroll of cards.
+--------------------------------------------------------------------------- */
+
+.section-head { margin: 0 0 18px; }
+.section-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 11.5px;
+  font-weight: 700;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--rose);
+}
+.section-title { font-size: clamp(22px, 2.7vw, 30px); margin-top: 8px; }
+.section-sub { font-size: 15.5px; color: var(--ink-soft); margin-top: 8px; line-height: 1.6; max-width: 68ch; }
+.section-rule { height: 3px; width: 54px; background: var(--rose); border-radius: 999px; margin-top: 14px; }
+
+/* ---------------------------------------------------------------------------
+   Helpline directory
+   ---------------------------------------------------------------------------
+   Whole-row dial targets. The number sits in monospace on the right of the name
+   so a column of them lines up and can be read down, which is how someone
+   scanning for "the one that starts with 10" actually reads it.
+--------------------------------------------------------------------------- */
+
+.helpline-directory { display: grid; gap: 10px; }
+
+.helpline-group {
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  overflow: hidden;
+  background: var(--surface);
+}
+.helpline-group.tone-emergency { border-color: var(--emergency-border); }
+.helpline-group.tone-urgent { border-color: var(--warn-border); }
+
+.helpline-group-head {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 13px 16px;
+  background: var(--surface-alt);
+  border: none;
+  text-align: start;
+  color: var(--ink);
+}
+.helpline-group.tone-emergency .helpline-group-head { background: var(--emergency-bg); color: var(--emergency-ink); }
+.helpline-group.tone-urgent .helpline-group-head { background: var(--warn-bg); color: var(--warn-ink); }
+.helpline-group-head:hover { filter: brightness(0.98); }
+
+.helpline-group-text { display: grid; gap: 3px; }
+.helpline-group-title { font-size: 14.5px; font-weight: 700; }
+.helpline-group-blurb { font-size: 12.5px; opacity: 0.82; line-height: 1.5; }
+.helpline-group-meta { display: flex; align-items: center; gap: 9px; flex-shrink: 0; }
+.helpline-count {
+  font-size: 11.5px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.07);
+}
+[data-theme="dark"] .helpline-count { background: rgba(255, 255, 255, 0.12); }
+
+.helpline-list { list-style: none; margin: 0; padding: 0; }
+.helpline-list li + li { border-top: 1px solid var(--border); }
+
+.helpline-row {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  padding: 13px 16px;
+  text-decoration: none;
+  color: var(--ink);
+  min-height: 56px;
+}
+.helpline-row:hover { background: var(--cream-dim); }
+.helpline-icon {
+  width: 38px;
+  height: 38px;
+  border-radius: 11px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--rose-soft);
+  color: var(--rose-deep);
+  flex-shrink: 0;
+}
+.helpline-body { display: grid; gap: 3px; flex: 1; min-width: 0; }
+.helpline-name {
+  display: flex;
+  align-items: baseline;
+  gap: 9px;
+  font-size: 15px;
+  font-weight: 700;
+  flex-wrap: wrap;
+}
+.helpline-number {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--rose-deep);
+  letter-spacing: 0.02em;
+}
+.helpline-detail { font-size: 12.5px; color: var(--ink-soft); line-height: 1.55; }
+.helpline-authority { font-size: 11px; color: var(--ink-muted); letter-spacing: 0.01em; }
+.helpline-call {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--emergency);
+  color: #fff;
+  flex-shrink: 0;
+}
+.helpline-foot {
+  font-size: 11.5px;
+  color: var(--ink-muted);
+  line-height: 1.6;
+  margin: 4px 2px 0;
+}
+
+.call-strip { display: grid; gap: 8px; }
+.call-strip-btn {
+  justify-content: flex-start;
+  text-decoration: none;
+  font-size: 14.5px;
+  padding: 12px 16px;
+}
+.call-strip-btn strong {
+  margin-inline-start: auto;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  padding-inline-start: 10px;
+}
+
+/* ---------------------------------------------------------------------------
+   Verdict panel
+   ---------------------------------------------------------------------------
+   For the one place in the app that has to answer a yes/no question with a
+   yes or a no. Deliberately the largest type on the page: the previous version
+   led with a percentage, and a percentage is not an answer.
+--------------------------------------------------------------------------- */
+
+.verdict {
+  border-radius: 16px;
+  padding: 22px;
+  border: 2px solid;
+  display: grid;
+  gap: 12px;
+}
+.verdict-yes {
+  background: var(--emergency-bg);
+  border-color: var(--emergency);
+  color: var(--emergency-ink);
+}
+.verdict-no {
+  background: var(--pill-selfcare-bg);
+  border-color: var(--selfcare);
+  color: var(--success-ink);
+}
+.verdict-eyebrow {
+  font-size: 11.5px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  opacity: 0.85;
+}
+.verdict-answer {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  font-family: var(--font-display);
+  font-size: clamp(24px, 4.4vw, 34px);
+  font-weight: 700;
+  line-height: 1.1;
+}
+.verdict-answer .verdict-mark {
+  width: 46px;
+  height: 46px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: currentColor;
+  flex-shrink: 0;
+}
+.verdict-answer .verdict-mark svg { color: var(--surface); }
+.verdict-because { font-size: 14.5px; line-height: 1.65; }
+.verdict-reasons {
+  margin: 0;
+  padding-inline-start: 20px;
+  font-size: 13.5px;
+  line-height: 1.7;
+  display: grid;
+  gap: 4px;
+}
+
+/* ---------------------------------------------------------------------------
+   Data rows
+   ---------------------------------------------------------------------------
+   Label on the left, value on the right, hairline between. Used wherever the
+   content is genuinely a table of facts, so it stops being styled ad hoc in
+   six different components.
+--------------------------------------------------------------------------- */
+
+.data-list { display: grid; }
+.data-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 9px 0;
+  border-top: 1px solid var(--border);
+  font-size: 13.5px;
+}
+.data-row:first-child { border-top: none; }
+.data-key { color: var(--ink-muted); }
+.data-value { color: var(--ink); font-weight: 600; text-align: end; }
+
+/* ---------------------------------------------------------------------------
+   Official report
+   ---------------------------------------------------------------------------
+   Typeset as a document, not as an app screen: a masthead with a reference
+   number, numbered clauses, a fixed measure, and a signature block. Sakhi is a
+   student project and says so — but the artefact a woman carries to a PHC has
+   to look like something a clinician will read, and a stack of rounded pink
+   cards is not that.
+--------------------------------------------------------------------------- */
+
+.doc {
+  background: var(--surface);
+  border: 1px solid var(--border-strong);
+  border-radius: 6px;
+  max-width: 860px;
+  margin: 0 auto;
+  box-shadow: var(--shadow);
+}
+
+.doc-masthead {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  padding: 24px 30px;
+  border-bottom: 3px double var(--border-strong);
+}
+.doc-emblem {
+  width: 54px;
+  height: 54px;
+  border-radius: 8px;
+  background: var(--rose);
+  color: var(--on-brand);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-display);
+  font-size: 27px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+.doc-masthead-text { flex: 1; min-width: 0; }
+.doc-issuer {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink-muted);
+}
+.doc-title {
+  font-family: var(--font-display);
+  font-size: clamp(20px, 2.6vw, 26px);
+  font-weight: 700;
+  line-height: 1.2;
+  margin-top: 5px;
+  color: var(--ink);
+}
+.doc-subtitle { font-size: 12.5px; color: var(--ink-soft); margin-top: 5px; line-height: 1.5; }
+
+.doc-refblock {
+  display: grid;
+  gap: 4px;
+  text-align: end;
+  font-size: 11px;
+  color: var(--ink-muted);
+  flex-shrink: 0;
+}
+.doc-refblock strong {
+  display: block;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 12.5px;
+  color: var(--ink);
+  letter-spacing: 0.03em;
+}
+
+.doc-body { padding: 8px 30px 30px; }
+
+.doc-section { padding: 22px 0; border-bottom: 1px solid var(--border); }
+.doc-section:last-child { border-bottom: none; }
+.doc-section-head {
+  display: flex;
+  align-items: baseline;
+  gap: 11px;
+  margin-bottom: 12px;
+}
+.doc-section-num {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--on-brand);
+  background: var(--rose);
+  border-radius: 5px;
+  padding: 3px 7px;
+  flex-shrink: 0;
+}
+.doc-section-title {
+  font-family: var(--font-display);
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--ink);
+  letter-spacing: 0.01em;
+}
+.doc-text { font-size: 14px; color: var(--ink); line-height: 1.7; margin: 0 0 10px; max-width: 74ch; }
+.doc-note { font-size: 12.5px; color: var(--ink-soft); line-height: 1.65; margin: 8px 0 0; }
+
+.doc-table { width: 100%; border-collapse: collapse; font-size: 13px; margin-top: 6px; }
+.doc-table th,
+.doc-table td {
+  text-align: start;
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  vertical-align: top;
+  line-height: 1.55;
+}
+.doc-table th {
+  background: var(--cream-dim);
+  font-weight: 700;
+  font-size: 11.5px;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+  white-space: nowrap;
+}
+.doc-table td.doc-cell-key { width: 34%; color: var(--ink-soft); }
+
+.doc-callout {
+  border-inline-start: 4px solid var(--rose);
+  background: var(--surface-alt);
+  padding: 13px 16px;
+  border-radius: 0 10px 10px 0;
+  font-size: 13.5px;
+  line-height: 1.65;
+  margin: 12px 0;
+}
+.doc-callout-urgent {
+  border-inline-start-color: var(--emergency);
+  background: var(--emergency-bg);
+  color: var(--emergency-ink);
+}
+
+.doc-scheme {
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 15px 17px;
+  margin-top: 11px;
+  background: var(--surface);
+}
+.doc-scheme-name { font-size: 15px; font-weight: 700; color: var(--rose-deep); line-height: 1.3; }
+.doc-scheme-org {
+  font-size: 11px;
+  color: var(--ink-muted);
+  margin-top: 3px;
+  letter-spacing: 0.02em;
+}
+.doc-scheme-field { display: grid; gap: 2px; margin-top: 10px; }
+.doc-scheme-label {
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-muted);
+}
+.doc-scheme-value { font-size: 13px; color: var(--ink); line-height: 1.6; }
+
+.doc-signblock {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+  gap: 20px;
+  margin-top: 18px;
+}
+.doc-signbox { padding-top: 34px; border-top: 1px solid var(--ink-muted); }
+.doc-signbox-label { font-size: 11.5px; color: var(--ink-soft); line-height: 1.5; }
+
+.doc-foot {
+  padding: 18px 30px 24px;
+  border-top: 3px double var(--border-strong);
+  font-size: 11px;
+  color: var(--ink-muted);
+  line-height: 1.7;
+}
+
+@media (max-width: 640px) {
+  .doc-masthead { flex-wrap: wrap; padding: 18px; }
+  .doc-refblock { text-align: start; }
+  .doc-body { padding: 4px 18px 22px; }
+  .doc-foot { padding: 16px 18px 20px; }
+}
+
+/* Printing the report is the point of the report. Everything chrome-like is
+   removed, the page is forced to light ink on white paper, and sections are
+   kept off page breaks so a scheme entry is never split in half. */
+@media print {
+  .doc, .doc * { visibility: visible !important; }
+  .doc {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    max-width: none;
+    border: none;
+    box-shadow: none;
+    border-radius: 0;
+    background: #fff !important;
+    color: #000 !important;
+  }
+  .doc-emblem { background: #7E2F44 !important; color: #fff !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  .doc-section-num { background: #7E2F44 !important; color: #fff !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  .doc-section, .doc-scheme, .doc-signblock { break-inside: avoid; page-break-inside: avoid; }
+  .doc-table th { background: #f0f0f0 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  @page { margin: 14mm; }
+}
+
+/* ---------------------------------------------------------------------------
+   Utility strip helplines
+--------------------------------------------------------------------------- */
+.helpline svg { opacity: 0.9; }
+
+/* A quiet inline link that still announces itself as a link. */
+.link-inline {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  color: var(--rose-deep);
+  font-weight: 600;
+  text-decoration: none;
+  border-bottom: 1px solid currentColor;
+}
+.link-inline:hover { color: var(--rose); }
+
+/* A plain text button that must not look like a form control. */
+.btn-text {
+  background: none;
+  border: none;
+  padding: 0;
+  color: var(--rose-deep);
+  font-weight: 600;
+  font-size: 13px;
+  text-decoration: underline;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}

@@ -6,11 +6,12 @@
     "node": ">=20"
   },
   "scripts": {
-    "start": "node server.js",
-    "dev": "node server.js",
-    "seed:demo": "node scripts/seed-demo.js",
-    "reset:demo": "node scripts/seed-demo.js",
-    "accounts:list": "node scripts/seed-demo.js --list"
+    "start": "node --env-file-if-exists=.env server.js",
+    "dev": "node --env-file-if-exists=.env server.js",
+    "seed:demo": "node --env-file-if-exists=.env scripts/seed-demo.js",
+    "reset:demo": "node --env-file-if-exists=.env scripts/seed-demo.js",
+    "accounts:list": "node --env-file-if-exists=.env scripts/seed-demo.js --list",
+    "accounts:reissue": "node --env-file-if-exists=.env scripts/seed-demo.js --reissue"
   },
   "dependencies": {
     "cors": "^2.8.5",

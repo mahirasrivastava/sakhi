@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import Icon from "./Icon.jsx";
 import {
   getCurrentPosition,
   fetchNearbyFacilities,
@@ -65,10 +66,15 @@ export default function NearbyFacilities({ compact = false }) {
 
       <div style={{ display: "flex", gap: 8, marginTop: compact ? 8 : 14, flexWrap: "wrap" }}>
         <button className="btn btn-primary" onClick={findNearby} disabled={locStatus === "locating"}>
+          <Icon name="pin" size={17} />
           {locStatus === "locating" ? "Getting your location..." : "Find nearest hospital"}
         </button>
-        <a href="tel:108" className="btn btn-ghost" style={{ color: "var(--emergency)", borderColor: "var(--emergency-border)" }}>Call 108</a>
-        <a href="tel:112" className="btn btn-ghost" style={{ color: "var(--emergency)", borderColor: "var(--emergency-border)" }}>Call 112</a>
+        <a href="tel:108" className="btn btn-ghost" style={{ color: "var(--emergency)", borderColor: "var(--emergency-border)" }}>
+          <Icon name="ambulance" size={16} /> Call 108
+        </a>
+        <a href="tel:112" className="btn btn-ghost" style={{ color: "var(--emergency)", borderColor: "var(--emergency-border)" }}>
+          <Icon name="alert" size={16} /> Call 112
+        </a>
       </div>
 
       {locStatus === "error" && (
@@ -91,7 +97,7 @@ export default function NearbyFacilities({ compact = false }) {
             className="btn btn-primary"
             style={{ marginTop: 10, padding: "8px 16px", fontSize: 13.5 }}
           >
-            Open hospitals near you in Maps →
+            Open hospitals near you in Maps <Icon name="arrowRight" size={15} />
           </a>
         </div>
       )}

@@ -61,13 +61,25 @@ export const api = {
   // --- public, anonymous patient flow ---
   triage: (payload) => req("/triage", { method: "POST", body: JSON.stringify(payload) }),
   navigate: (payload) => req("/navigate", { method: "POST", body: JSON.stringify(payload) }),
-  // payload: { frames: [[{r,g,b}...], ...], reference: [{r,g,b}...], focusScore }
+  // payload: { frames: [[{r,g,b}...], ...], reference: [{r,g,b}...], focusScore,
+  //            symptoms: string[], risks: string[] }
   anaemiaScreen: (payload) => req("/anaemia-screen", { method: "POST", body: JSON.stringify(payload) }),
+  // The checklist labels come from the server so they cannot drift out of step
+  // with the weights that score them.
+  anaemiaQuestions: () => req("/anaemia-screen/questions"),
   impact: () => req("/impact"),
-  // Only the OCR'd text travels — the prescription image never leaves the device.
   analysePrescription: (payload) =>
     req("/prescription/analyze", { method: "POST", body: JSON.stringify(payload) }),
   prescriptionFamilyOptions: () => req("/prescription/family-history-options"),
+  // Which OCR engine the server can offer. Drives both the code path taken and
+  // what the user is told about where their photograph goes, so it is fetched
+  // before the file picker rather than after.
+  ocrStatus: () => req("/prescription/ocr/status"),
+  // Relays the image to the configured vision provider. The server holds the
+  // API key — a key in the client bundle is a key published — and forwards the
+  // image once without storing it.
+  prescriptionOcr: (payload) =>
+    req("/prescription/ocr", { method: "POST", body: JSON.stringify(payload) }),
   knowledgeCategories: (lang) => req(`/knowledge/categories?lang=${lang}`),
   knowledgeBrowse: (category, lang) => req(`/knowledge/browse?category=${category}&lang=${lang}`),
   knowledgeSearch: (q, lang, category) => {

@@ -1,8 +1,9 @@
 import React, { useCallback, useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import { getCurrentPosition, reverseGeocode } from "../geo.js";
-import {
-  encodeDigipin, formatDigipin, buildLocationMessage, EMERGENCY_NUMBERS,
-} from "../digipin.js";
+import { encodeDigipin, formatDigipin, buildLocationMessage } from "../digipin.js";
+import { callsFor } from "../helplines.js";
+import Icon from "./Icon.jsx";
 
 /**
  * "Call an ambulance and tell them where you are."
@@ -22,7 +23,12 @@ import {
  *    opens a page is how people learn to deny the permission — it is requested
  *    when they ask for it, or on a screen that is already about an emergency.
  */
-export default function EmergencyLocator({ autoStart = false, maternal = false, compact = false }) {
+export default function EmergencyLocator({
+  autoStart = false,
+  maternal = false,
+  compact = false,
+  safety = false,
+}) {
   const [loc, setLoc] = useState(null);
   const [placeName, setPlaceName] = useState(null);
   const [status, setStatus] = useState("idle"); // idle | locating | ready | error
@@ -81,16 +87,18 @@ export default function EmergencyLocator({ autoStart = false, maternal = false, 
     }
   }
 
-  // Ordered so the maternity line comes first when the context is a pregnancy.
-  const numbers = maternal
-    ? [...EMERGENCY_NUMBERS].sort((a, b) => Number(Boolean(b.maternal)) - Number(Boolean(a.maternal)))
-    : EMERGENCY_NUMBERS;
+  // Ordered by situation: the maternity line first for a pregnancy, and the
+  // abuse/self-harm lines first when the intake flagged one — an ambulance is
+  // not what someone disclosing violence at home is asking for.
+  const numbers = callsFor({ maternal, safety, limit: safety ? 4 : 3 });
 
   return (
     <div style={styles.wrap}>
       {!compact && (
         <>
-          <h2 className="display" style={styles.heading}>Call an ambulance</h2>
+          <h2 className="display" style={styles.heading}>
+            {safety ? "Talk to someone now" : "Call an ambulance"}
+          </h2>
           <p style={styles.lead}>
             Call first, then read out your DIGIPIN. It is ten characters that name a
             spot about four metres across — far easier to say down a phone than
@@ -100,14 +108,15 @@ export default function EmergencyLocator({ autoStart = false, maternal = false, 
       )}
 
       <div style={styles.callRow}>
-        {numbers.map((n) => (
+        {numbers.map((n, i) => (
           <a
             key={n.number}
-            href={`tel:${n.number}`}
-            className={n.primary || (maternal && n.maternal) ? "btn btn-primary" : "btn btn-ghost"}
+            href={`tel:${n.dial}`}
+            className={`btn ${i === 0 ? "btn-emergency" : "btn-ghost"}`}
             style={styles.callBtn}
           >
-            📞 {n.label}
+            <Icon name={n.icon} size={17} />
+            <span>{n.label} {n.number}</span>
           </a>
         ))}
       </div>
@@ -116,11 +125,15 @@ export default function EmergencyLocator({ autoStart = false, maternal = false, 
         {numbers.map((n) => <li key={n.number}><strong>{n.number}</strong> — {n.detail}</li>)}
       </ul>
 
+      <Link to="/helplines" className="btn-text" style={{ marginTop: 10 }}>
+        All national helplines <Icon name="arrowRight" size={13} />
+      </Link>
+
       <div style={styles.divider} />
 
       {status === "idle" && (
         <button className="btn btn-ghost" onClick={locate} style={{ width: "100%", justifyContent: "center" }}>
-          📍 Find my location code (DIGIPIN)
+          <Icon name="pin" size={17} /> Find my location code (DIGIPIN)
         </button>
       )}
 
@@ -168,7 +181,8 @@ export default function EmergencyLocator({ autoStart = false, maternal = false, 
 
           <div style={styles.actions}>
             <button className="btn btn-ghost" onClick={copyMessage} style={styles.actionBtn}>
-              {copied ? "✓ Copied" : "Copy location message"}
+              {copied && <Icon name="check" size={15} />}
+              {copied ? "Copied" : "Copy location message"}
             </button>
             {/* An SMS carries where a call drops. The body is pre-filled so nobody
                 has to type coordinates while panicking. */}

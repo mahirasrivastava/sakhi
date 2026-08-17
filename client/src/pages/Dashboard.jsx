@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { useLanguage } from "../context/LanguageContext.jsx";
 import { useAuth } from "../context/AuthContext.jsx";
 import { api } from "../api.js";
+import Icon from "../components/Icon.jsx";
 
 const LEVEL_ORDER = ["emergency", "urgent", "routine", "self-care"];
 
@@ -65,8 +66,8 @@ export default function Dashboard() {
             {lvl === "all" ? "All" : lvl}
           </button>
         ))}
-        <button onClick={load} style={{ marginLeft: "auto", fontSize: 13, color: "var(--rose-deep)", background: "none", border: "none", fontWeight: 600 }}>
-          Refresh
+        <button onClick={load} className="btn-text" style={{ marginInlineStart: "auto" }}>
+          <Icon name="refresh" size={14} /> Refresh
         </button>
       </div>
 
@@ -126,7 +127,7 @@ function TraceDrawer({ sessionId, onClose, onDeleted }) {
   return (
     <div style={overlayStyle} onClick={onClose}>
       <div style={drawerStyle} onClick={(e) => e.stopPropagation()}>
-        <button onClick={onClose} style={{ float: "right", border: "none", background: "none", fontSize: 18 }}>✕</button>
+        <button onClick={onClose} className="btn-icon" style={{ float: "right", border: "none", background: "none" }} aria-label="Close"><Icon name="close" size={18} /></button>
 
         {loading && <p style={{ color: "var(--ink-muted)", marginTop: 40 }}>Opening record…</p>}
         {error && <p style={{ color: "var(--emergency)", marginTop: 40 }}>{error}</p>}
@@ -159,7 +160,7 @@ function TraceDrawer({ sessionId, onClose, onDeleted }) {
             </Section>
             <Section title="Model layer">
               <p style={{ fontSize: 13 }}>
-                rule level → <strong>{session.triage.ruleLevel}</strong>, model level → <strong>{session.triage.modelLevel}</strong> ({session.triage.modelSource})
+                rule level <strong>{session.triage.ruleLevel}</strong>, model level <strong>{session.triage.modelLevel}</strong> ({session.triage.modelSource})
               </p>
               <p style={{ fontSize: 13, color: "var(--ink-soft)" }}>{session.triage.modelReason}</p>
             </Section>

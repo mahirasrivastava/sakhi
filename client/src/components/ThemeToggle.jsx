@@ -1,7 +1,8 @@
 import React from "react";
 import { useTheme } from "../context/ThemeContext.jsx";
+import Icon from "./Icon.jsx";
 
-const ICONS = { light: "☀️", dark: "🌙", system: "🌗" };
+const ICONS = { light: "sun", dark: "moon", system: "auto" };
 const LABELS = {
   light: "Light",
   dark: "Dark",
@@ -28,7 +29,7 @@ export default function ThemeToggle() {
       aria-label={`Theme: ${LABELS[mode]}. Switch to ${LABELS[NEXT[mode]]}.`}
       className="util-btn"
     >
-      <span aria-hidden="true" style={{ fontSize: 13 }}>{ICONS[mode]}</span>
+      <Icon name={ICONS[mode]} size={14} />
       <span style={styles.label}>{LABELS[mode]}</span>
     </button>
   );

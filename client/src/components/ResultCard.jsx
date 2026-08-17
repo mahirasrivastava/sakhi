@@ -4,6 +4,8 @@ import NearbyFacilities from "./NearbyFacilities.jsx";
 import EmergencyLocator from "./EmergencyLocator.jsx";
 import { speak, stopSpeaking, speechSynthesisSupported } from "../speech.js";
 import { api } from "../api.js";
+import Icon from "./Icon.jsx";
+import { Link } from "react-router-dom";
 
 const LEVEL_META = {
   emergency: { pill: "pill-emergency", label: { en: "Emergency", hi: "आपातकाल", kn: "ತುರ್ತು" } },
@@ -49,7 +51,8 @@ export default function ResultCard({ session }) {
               className="btn btn-ghost"
               style={{ padding: "6px 12px", fontSize: 12.5 }}
             >
-              {speaking ? "⏸ Stop" : "🔊 Listen"}
+              <Icon name={speaking ? "pause" : "speaker"} size={15} />
+              {speaking ? "Stop" : "Listen"}
             </button>
           )}
           <ConfidenceBar value={triage.confidence} label={t("result_confidence")} />
@@ -79,6 +82,10 @@ export default function ResultCard({ session }) {
             autoStart
             compact
             maternal={Boolean(session.intake?.isPregnantOrPossible)}
+            // A disclosure of abuse or self-harm reorders the call buttons to
+            // 181, 1098 and Tele-MANAS. An ambulance is not what that person is
+            // asking for, and offering it first is a way of not listening.
+            safety={Boolean(session.intake?.safetyFlag)}
           />
         </div>
       )}
@@ -103,7 +110,7 @@ export default function ResultCard({ session }) {
             <li key={r.id}><code>{r.id}</code> — {r.description}</li>
           ))}
           <li style={{ marginTop: 6 }}>
-            <strong>{t("result_model_note")}:</strong> rule level "{triage.ruleLevel}" → model level "{triage.modelLevel}" ({triage.modelSource})
+            <strong>{t("result_model_note")}:</strong> rule level "{triage.ruleLevel}" to model level "{triage.modelLevel}" ({triage.modelSource})
           </li>
         </ul>
       </details>
@@ -133,14 +140,18 @@ export default function ResultCard({ session }) {
         </div>
       )}
 
-      <button
-        type="button"
-        onClick={() => window.print()}
-        className="btn btn-ghost no-print"
-        style={{ marginTop: 14, padding: "8px 16px", fontSize: 13 }}
-      >
-        🖨 Print / save as PDF for a doctor
-      </button>
+      <div className="no-print" style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 16 }}>
+        {/* The report is the better artefact to hand a clinician — it carries
+            this result plus everything else, and the entitlements that cover
+            whatever it recommends. The bare print stays for anyone who only
+            wants this one card. */}
+        <Link to="/report" className="btn btn-primary btn-sm">
+          <Icon name="report" size={15} /> Add to my health report
+        </Link>
+        <button type="button" onClick={() => window.print()} className="btn btn-ghost btn-sm">
+          <Icon name="printer" size={15} /> Print this result
+        </button>
+      </div>
 
       {/* Print-only clean summary — hidden on screen, shown via @media print */}
       <div className="print-only">

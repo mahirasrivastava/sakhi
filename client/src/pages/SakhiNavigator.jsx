@@ -2,6 +2,8 @@ import React, { useEffect, useState } from "react";
 import { useLanguage } from "../context/LanguageContext.jsx";
 import { api } from "../api.js";
 import { speak, speechSynthesisSupported } from "../speech.js";
+import Icon from "../components/Icon.jsx";
+import ScriptField from "../components/ScriptField.jsx";
 
 export default function SakhiNavigator() {
   const { t, lang } = useLanguage();
@@ -61,28 +63,31 @@ export default function SakhiNavigator() {
       </p>
 
       {/* Search bar */}
+      {/* The search box is a ScriptField: someone looking for "बुखार" has to be
+          able to type it, and the phone very often has no Devanagari keyboard
+          installed. Phonetic typing ("bukhaar") works here too. */}
       <form onSubmit={handleSearch} style={{ marginTop: 20, display: "flex", gap: 8 }}>
-        <input
+        <ScriptField
           type="text"
           value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
+          onValueChange={setSearchQuery}
+          onEnter={() => handleSearch({ preventDefault() {} })}
           placeholder={lang === "hi" ? "यहां खोजें..." : lang === "kn" ? "ಇಲ್ಲಿ ಹುಡುಕಿ..." : "Search health topics..."}
+          aria-label="Search health topics"
           style={{
-            flex: 1, padding: "12px 16px", borderRadius: 999,
+            width: "100%", padding: "12px 16px", borderRadius: 999,
             border: "1px solid var(--border)", fontSize: 14.5,
-            fontFamily: "Inter, sans-serif",
+            background: "var(--surface)", color: "var(--ink)",
           }}
+          wrapperStyle={{ flex: 1 }}
         />
-        <button type="submit" className="btn btn-primary" disabled={loading}>
-          {loading ? "..." : "🔍"}
+        <button type="submit" className="btn btn-primary" disabled={loading} aria-label="Search">
+          {loading ? "…" : <Icon name="search" size={18} />}
         </button>
       </form>
       {searchResults !== null && (
-        <button onClick={clearSearch} style={{
-          marginTop: 8, background: "none", border: "none",
-          color: "var(--rose-deep)", fontSize: 13, fontWeight: 600, cursor: "pointer",
-        }}>
-          ← Back to categories
+        <button onClick={clearSearch} className="btn-text" style={{ marginTop: 8 }}>
+          <Icon name="arrowLeft" size={13} /> Back to categories
         </button>
       )}
 
@@ -103,7 +108,9 @@ export default function SakhiNavigator() {
                 background: activeCategory === cat.id ? "var(--surface-alt)" : "var(--surface)",
               }}
             >
-              <div style={{ fontSize: 28 }}>{cat.icon}</div>
+              <div style={{ display: "flex", justifyContent: "center", color: "var(--rose-deep)" }}>
+                <Icon name={cat.icon} size={26} />
+              </div>
               <div style={{ fontSize: 13, fontWeight: 600, marginTop: 8, color: "var(--ink)", lineHeight: 1.4 }}>
                 {cat.label}
               </div>
@@ -174,7 +181,7 @@ function KnowledgeCard({ article, isExpanded, onToggle, lang }) {
               className="btn btn-ghost"
               style={{ marginTop: 10, padding: "6px 14px", fontSize: 12.5 }}
             >
-              🔊 Read aloud
+              <Icon name="speaker" size={15} /> Read aloud
             </button>
           )}
         </div>

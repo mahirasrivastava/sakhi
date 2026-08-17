@@ -1,5 +1,17 @@
 import React, { useEffect, useRef, useState } from "react";
+import { Link } from "react-router-dom";
 import { api } from "../api.js";
+import Icon from "../components/Icon.jsx";
+import ScriptField from "../components/ScriptField.jsx";
+import { useReport } from "../context/ReportContext.jsx";
+import { readPrescription, disposeOcr, ocrStatus } from "../ocr.js";
+
+const PHASE_LABEL = {
+  preparing: "Preparing the photo on this device",
+  uploading: "Sending to the reading service",
+  loading: "Loading the on-device model (first scan only)",
+  reading: "Reading the text on this device",
+};
 
 /**
  * Prescription reader.
@@ -9,16 +21,19 @@ import { api } from "../api.js";
  * never leaves the device. Only the extracted text is posted for analysis, and
  * the user is told that plainly before they upload anything.
  *
- * tesseract.js is loaded lazily: it pulls a multi-megabyte WASM core and a
- * language model, and nobody visiting the home page should pay for that.
+ * The engine, the model and every speed decision live in ../ocr.js; the short
+ * version is that the previous code handed a 12-megapixel JPEG straight to
+ * Tesseract inside a worker it rebuilt on every scan. See that file's header.
  */
 export default function PrescriptionScan() {
   const [imageUrl, setImageUrl] = useState(null);
   const [ocrText, setOcrText] = useState("");
   const [editing, setEditing] = useState(false);
   const [progress, setProgress] = useState(null);
+  const [phase, setPhase] = useState(null);
   const [stage, setStage] = useState("idle"); // idle | ocr | done | error
   const [error, setError] = useState(null);
+  const [timing, setTiming] = useState(null);
 
   const [familyOptions, setFamilyOptions] = useState([]);
   const [familyHistory, setFamilyHistory] = useState([]);
@@ -27,13 +42,28 @@ export default function PrescriptionScan() {
   const [result, setResult] = useState(null);
   const [analysing, setAnalysing] = useState(false);
 
+  // Which engine the server can offer, and the user's choice to override it.
+  // Fetched before the file picker is used, because it determines what we have
+  // to tell them about where their photograph goes.
+  const [engine, setEngine] = useState(null);
+  const [forceOnDevice, setForceOnDevice] = useState(false);
+  const [reading, setReading] = useState(null);
+
   const objectUrlRef = useRef(null);
+  const { recordPrescription } = useReport();
 
   useEffect(() => {
     api.prescriptionFamilyOptions().then(setFamilyOptions).catch(() => {});
-    // Revoke the blob URL on unmount so the image is not left resident.
-    return () => { if (objectUrlRef.current) URL.revokeObjectURL(objectUrlRef.current); };
+    ocrStatus().then(setEngine).catch(() => {});
+    return () => {
+      // Revoke the blob URL so the image is not left resident, and free the
+      // WASM core and the ~2 MB model along with it.
+      if (objectUrlRef.current) URL.revokeObjectURL(objectUrlRef.current);
+      disposeOcr();
+    };
   }, []);
+
+  const usingCloud = Boolean(engine?.configured) && !forceOnDevice;
 
   async function handleFile(e) {
     const file = e.target.files?.[0];
@@ -42,7 +72,9 @@ export default function PrescriptionScan() {
     setError(null);
     setResult(null);
     setOcrText("");
+    setTiming(null);
     setStage("ocr");
+    setPhase("preparing");
     setProgress(0);
 
     if (objectUrlRef.current) URL.revokeObjectURL(objectUrlRef.current);
@@ -50,29 +82,30 @@ export default function PrescriptionScan() {
     setImageUrl(objectUrlRef.current);
 
     try {
-      // Dynamic import: the OCR engine is fetched only when someone actually
-      // scans something.
-      const { createWorker } = await import("tesseract.js");
-      const worker = await createWorker("eng", 1, {
-        logger: (m) => {
-          if (m.status === "recognizing text") setProgress(Math.round(m.progress * 100));
+      const res = await readPrescription(
+        file,
+        (nextPhase, ratio) => {
+          setPhase(nextPhase);
+          setProgress(Math.round((ratio ?? 0) * 100));
         },
-      });
-      const { data } = await worker.recognize(file);
-      await worker.terminate();
+        { forceOnDevice }
+      );
 
-      setOcrText(data.text || "");
+      setOcrText(res.text);
+      setReading(res);
+      setTiming({ ms: res.ms, confidence: res.confidence, ...res.prepared });
       setStage("done");
-      if (!data.text || data.text.trim().length < 10) {
+      if (!res.text || res.text.trim().length < 10) {
         setError("Very little text was readable. Try a straighter, brighter photo — or type the medicine names in yourself below.");
         setEditing(true);
       }
-    } catch (err) {
+    } catch {
       setError("Couldn't read the image. You can type the medicine names in below instead.");
       setStage("error");
       setEditing(true);
     } finally {
       setProgress(null);
+      setPhase(null);
     }
   }
 
@@ -92,6 +125,21 @@ export default function PrescriptionScan() {
         isPregnantOrPossible: pregnant,
       });
       setResult(res);
+      recordPrescription({
+        medicines: res.medicines.map((m) => ({ label: m.label, matchedOn: m.matchedOn[0] })),
+        conditions: res.conditions.map((c) => c.label),
+        interlinked: res.interlinked.map((i) => ({ label: i.label, why: i.reasons[0]?.why })),
+        familyRisks: res.familyRisks.map((f) => ({
+          label: f.label, priority: f.priority, advice: f.advice,
+        })),
+        pregnancyNotes: res.pregnancyNotes,
+        questionsForDoctor: res.questionsForDoctor,
+        isPregnantOrPossible: pregnant,
+        // The report names the engine, because "OCR read this" means something
+        // different depending on which one ran.
+        engine: reading?.engine?.model || "unknown",
+        structured: reading?.medicines?.length ? reading.medicines : null,
+      });
     } catch (err) {
       setError(err.message || "Could not analyse the prescription.");
     } finally {
@@ -107,11 +155,82 @@ export default function PrescriptionScan() {
         related problems are worth asking about, and what to raise with a doctor.
       </p>
 
-      <div style={styles.privacyNote}>
-        <strong>The photo stays on this phone.</strong> The text is read here in your
-        browser; only the words — never the image — are sent for analysis, and nothing
-        is saved. Close the tab and it is gone.
+      {/* The disclosure has to match what actually happens, and what happens now
+          depends on how the server is configured. Saying "stays on your phone"
+          while uploading the image would be the single worst thing this page
+          could do — so the copy is driven by the live engine status, and it is
+          placed above the file picker, not below the result. */}
+      <div style={{ ...styles.privacyNote, ...(usingCloud ? styles.privacyNoteCloud : null) }}>
+        <Icon
+          name={usingCloud ? "info" : "lock"}
+          size={16}
+          style={{ float: "inline-start", marginInlineEnd: 8, marginTop: 2 }}
+        />
+        {usingCloud ? (
+          <>
+            <strong>Your photo is sent to be read.</strong> To read handwriting
+            accurately the image goes to {engine?.engine || "a reading service"}, is
+            read there, and is not stored by Sakhi. A prescription shows your name and
+            your diagnosis — if you would rather it never left this phone, switch to
+            on-device reading below. That is private and works offline, but it is much
+            worse at handwriting.
+          </>
+        ) : (
+          <>
+            <strong>The photo stays on this phone.</strong> The text is read here in
+            your browser; only the words — never the image — are sent for analysis, and
+            nothing is saved. Close the tab and it is gone.
+          </>
+        )}
       </div>
+
+      {engine?.configured && (
+        <label style={styles.engineToggle}>
+          <input
+            type="checkbox"
+            checked={forceOnDevice}
+            onChange={(e) => setForceOnDevice(e.target.checked)}
+          />
+          <span>
+            Read on this device only — never upload my photo
+            <span style={styles.engineToggleHint}>
+              Uses {engine.fallback?.engine || "Tesseract"}. Private and offline, but it
+              often misreads handwritten prescriptions.
+            </span>
+          </span>
+        </label>
+      )}
+
+      {/* Not configured. This has to be loud.
+          Tesseract cannot read a handwritten prescription reliably — that is a
+          property of the model, not of the photo — so silently falling back to
+          it produces confidently wrong drug names while the page looks like it
+          is working. Someone then blames their handwriting and retakes the
+          photo ten times. Say what is actually wrong and how to fix it. */}
+      {engine && !engine.configured && (
+        <div style={styles.notConfigured}>
+          <Icon name="alert" size={18} style={{ flexShrink: 0, marginTop: 1 }} />
+          <div>
+            <strong>Accurate reading is switched off on this server.</strong>
+            <p style={{ margin: "6px 0 0", lineHeight: 1.6 }}>
+              No reading-service key is configured, so this falls back to the on-device
+              engine. That engine reads <em>printed</em> text reasonably and
+              <strong> handwriting badly</strong> — expect wrong drug names, and check
+              every line against the paper. This is the most likely reason a scan comes
+              back looking like nonsense.
+            </p>
+            <details style={{ marginTop: 9 }}>
+              <summary style={styles.engineSummary}>How to turn it on</summary>
+              <p style={{ fontSize: 12.5, lineHeight: 1.75, marginTop: 7, color: "var(--ink-soft)" }}>
+                Get a key at <strong>aistudio.google.com/apikey</strong>, put it in{" "}
+                <code>server/.env</code> as <code>GEMINI_API_KEY=your-key</code>, and
+                restart the server. See <code>server/.env.example</code>. Note that this
+                sends the photo to Google — the notice above changes to say so.
+              </p>
+            </details>
+          </div>
+        </div>
+      )}
 
       <div className="card" style={{ marginTop: 18 }}>
         <label style={styles.uploadLabel}>
@@ -123,7 +242,7 @@ export default function PrescriptionScan() {
             style={{ display: "none" }}
           />
           <span className="btn btn-primary" style={{ pointerEvents: "none" }}>
-            📄 Take or choose a photo
+            <Icon name="camera" size={18} /> Take or choose a photo
           </span>
         </label>
         <p style={styles.uploadHint}>
@@ -142,13 +261,125 @@ export default function PrescriptionScan() {
               <div style={{ ...styles.progressFill, width: `${progress ?? 5}%` }} />
             </div>
             <p style={styles.muted}>
-              Reading the text on this device{progress != null ? ` — ${progress}%` : "…"}
+              {PHASE_LABEL[phase] || "Working"}
+              {progress != null ? ` — ${progress}%` : "…"}
             </p>
           </div>
         )}
 
+        {timing && (
+          <p style={styles.timing}>
+            <Icon name="check" size={14} style={{ color: "var(--success-ink)" }} />
+            Read in {(timing.ms / 1000).toFixed(1)}s
+            {timing.confidence != null && ` · confidence ${Math.round(timing.confidence * 100)}%`}
+            {reading && ` · ${reading.onDevice ? "read on this device" : "read by " + (reading.engine?.engine || "the reading service")}`}
+          </p>
+        )}
+
+        {/* A silent downgrade to the weaker engine would be the worst outcome
+            here: the person would blame their handwriting for a network fault
+            and keep retaking the photo. */}
+        {reading?.degradedFrom && (
+          <p style={styles.degraded}>
+            <Icon name="alert" size={14} style={{ flexShrink: 0, marginTop: 2 }} />
+            <span>
+              The reading service could not be reached, so this was read on your device
+              instead — which is much worse at handwriting. Check the text carefully, or
+              try again when you have signal. ({reading.degradedFrom})
+            </span>
+          </p>
+        )}
+
         {error && <p style={styles.error}>{error}</p>}
+
+        {/* Which model, said plainly. A tool that reads a medical document and
+            will not say what read it is asking for trust it has not earned. */}
+        <details style={styles.engineBox}>
+          <summary style={styles.engineSummary}>
+            <Icon name="info" size={14} /> Which model reads this
+          </summary>
+          <div className="data-list" style={{ marginTop: 8 }}>
+            <div className="data-row">
+              <span className="data-key">Engine</span>
+              <span className="data-value">{reading?.engine?.engine || engine?.engine || "—"}</span>
+            </div>
+            <div className="data-row">
+              <span className="data-key">Model</span>
+              <span className="data-value">{reading?.engine?.model || engine?.model || "—"}</span>
+            </div>
+            <div className="data-row">
+              <span className="data-key">Configuration</span>
+              <span className="data-value">{reading?.engine?.mode || engine?.mode || "—"}</span>
+            </div>
+            <div className="data-row">
+              <span className="data-key">Where it runs</span>
+              <span className="data-value">{reading?.engine?.where || engine?.where || "—"}</span>
+            </div>
+            {engine?.configured && (
+              <div className="data-row">
+                <span className="data-key">Offline fallback</span>
+                <span className="data-value">{engine.fallback?.engine} — {engine.fallback?.model}</span>
+              </div>
+            )}
+          </div>
+          <p style={styles.engineNote}>
+            Tesseract reads rendered text well and handwriting badly — drug names are
+            out-of-vocabulary proper nouns, and its language model pulls an unfamiliar
+            string toward a familiar English word, so "Ranitidine" comes back
+            "Rantidine". Dosage notation like <code>1-0-1</code> or <code>T.D.S.</code>{" "}
+            means nothing to it. A vision model reads the page knowing it is a
+            prescription, which is why it is the default when a key is configured.
+          </p>
+        </details>
       </div>
+
+      {/* Structured output. Only the vision model returns this; Tesseract gives
+          a flat string, and inventing rows from it would misrepresent where the
+          reading came from. */}
+      {reading?.medicines?.length > 0 && (
+        <div className="card" style={{ marginTop: 18 }}>
+          <div className="section-eyebrow">
+            <Icon name="pill" size={13} /> What was read
+          </div>
+          <p style={{ fontSize: 13, color: "var(--ink-soft)", margin: "8px 0 14px", lineHeight: 1.6 }}>
+            Check every line against the paper before relying on it. Anything marked
+            unclear was not read confidently.
+          </p>
+          <div style={{ overflowX: "auto" }}>
+            <table className="doc-table" style={{ minWidth: 460 }}>
+              <thead>
+                <tr>
+                  <th>Medicine</th>
+                  <th>Strength</th>
+                  <th>How often</th>
+                  <th>For how long</th>
+                </tr>
+              </thead>
+              <tbody>
+                {reading.medicines.map((m, i) => (
+                  <tr key={i}>
+                    <td style={{ fontWeight: 600 }}>
+                      {m.name || "—"}
+                      {m.form && <span style={styles.formTag}>{m.form}</span>}
+                      {!m.legible && <span style={styles.unclearTag}>unclear</span>}
+                    </td>
+                    <td>{m.strength || "—"}</td>
+                    <td>{m.frequency || "—"}</td>
+                    <td>{m.duration || "—"}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          {reading.quality && (
+            <p style={styles.engineNote}>
+              Image quality judged <strong>{reading.quality}</strong>
+              {reading.handwritten ? ", handwritten" : ", printed"}
+              {reading.notes ? ` — ${reading.notes}` : "."}
+            </p>
+          )}
+        </div>
+      )}
 
       {(ocrText || editing) && (
         <div className="card" style={{ marginTop: 18 }}>
@@ -163,9 +394,14 @@ export default function PrescriptionScan() {
             far more accurate.
           </p>
           {editing ? (
-            <textarea
+            // Latin, not the app language: a drug name is printed in Latin
+            // letters on the strip in her hand, and transliterating "Ferrous"
+            // into Devanagari would stop the server matching it.
+            <ScriptField
+              as="textarea"
               value={ocrText}
-              onChange={(e) => setOcrText(e.target.value)}
+              onValueChange={setOcrText}
+              keyboard="latin"
               rows={8}
               style={styles.textarea}
               placeholder="Type the medicine names, one per line"
@@ -192,7 +428,8 @@ export default function PrescriptionScan() {
                   aria-pressed={on}
                   style={{ ...styles.chip, ...(on ? styles.chipOn : {}) }}
                 >
-                  {on ? "✓ " : ""}{o.label}
+                  {on && <Icon name="check" size={13} />}
+                  {o.label}
                 </button>
               );
             })}
@@ -333,9 +570,14 @@ function Analysis({ result }) {
         <ol style={styles.questionList}>
           {result.questionsForDoctor.map((q, i) => <li key={i}>{q}</li>)}
         </ol>
-        <button className="btn btn-ghost" onClick={() => window.print()} style={{ marginTop: 14 }}>
-          Print or save these questions
-        </button>
+        <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 14 }}>
+          <Link to="/report" className="btn btn-primary btn-sm">
+            <Icon name="report" size={15} /> Put this in my health report
+          </Link>
+          <button className="btn btn-ghost btn-sm" onClick={() => window.print()}>
+            <Icon name="printer" size={15} /> Print these questions
+          </button>
+        </div>
       </div>
 
       <p style={styles.disclaimer}>{result.disclaimer}</p>
@@ -379,8 +621,54 @@ const styles = {
   sectionHeading: { fontSize: 14.5, fontWeight: 700, color: "var(--rose-deep)", marginTop: 16, marginBottom: 4 },
   chips: { display: "flex", flexWrap: "wrap", gap: 7, marginTop: 10 },
   chip: {
+    display: "inline-flex", alignItems: "center", gap: 5,
     padding: "7px 12px", borderRadius: 999, fontSize: 12.5, fontWeight: 600,
     border: "1px solid var(--border)", background: "var(--surface)", color: "var(--ink-soft)",
+  },
+  timing: {
+    display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap",
+    fontSize: 12, color: "var(--ink-soft)", marginTop: 12, lineHeight: 1.6,
+  },
+  engineBox: {
+    marginTop: 16, borderTop: "1px solid var(--border)", paddingTop: 12,
+  },
+  engineSummary: {
+    display: "flex", alignItems: "center", gap: 6, cursor: "pointer",
+    fontSize: 12.5, fontWeight: 600, color: "var(--rose-deep)",
+  },
+  engineNote: {
+    fontSize: 11.5, color: "var(--ink-muted)", lineHeight: 1.7, marginTop: 10,
+  },
+  notConfigured: {
+    display: "flex", gap: 11, marginTop: 12, padding: "13px 15px",
+    borderRadius: 11, background: "var(--emergency-bg)",
+    border: "1px solid var(--emergency-border)", color: "var(--emergency-ink)",
+    fontSize: 13.5, lineHeight: 1.6,
+  },
+  privacyNoteCloud: {
+    background: "var(--warn-bg, var(--cream-dim))",
+    borderColor: "var(--warn-border, var(--border))",
+  },
+  engineToggle: {
+    display: "flex", alignItems: "flex-start", gap: 9, marginTop: 10,
+    padding: "11px 13px", border: "1px solid var(--border)", borderRadius: 10,
+    background: "var(--surface)", fontSize: 13.5, cursor: "pointer", lineHeight: 1.5,
+  },
+  engineToggleHint: {
+    display: "block", fontSize: 12, color: "var(--ink-muted)", marginTop: 3, lineHeight: 1.6,
+  },
+  degraded: {
+    display: "flex", gap: 8, marginTop: 12, padding: "10px 12px",
+    borderRadius: 9, background: "var(--emergency-bg)", color: "var(--emergency-ink)",
+    fontSize: 12.5, lineHeight: 1.6,
+  },
+  formTag: {
+    marginInlineStart: 7, fontSize: 10.5, fontWeight: 600, textTransform: "uppercase",
+    letterSpacing: "0.04em", color: "var(--ink-muted)",
+  },
+  unclearTag: {
+    marginInlineStart: 7, fontSize: 10.5, fontWeight: 700, textTransform: "uppercase",
+    letterSpacing: "0.04em", color: "var(--emergency)",
   },
   chipOn: { background: "var(--rose-soft)", borderColor: "var(--rose)", color: "var(--rose-deep)" },
   check: {

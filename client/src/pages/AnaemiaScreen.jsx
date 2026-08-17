@@ -1,5 +1,8 @@
 import React, { useEffect, useRef, useState } from "react";
+import { Link } from "react-router-dom";
 import { api } from "../api.js";
+import Icon from "../components/Icon.jsx";
+import { useReport } from "../context/ReportContext.jsx";
 
 // The on-screen guide box, as a fraction of the (square) preview. The crop sent
 // for analysis is computed from these same numbers — previously the box was
@@ -9,14 +12,20 @@ const BOX = { left: 0.30, top: 0.36, width: 0.40, height: 0.24 };
 
 const CROP_PX = 160;      // analysis crop resolution
 const REFERENCE_PX = 64;  // whole-frame downsample, used for white balance
-const BURST_FRAMES = 5;
-const BURST_INTERVAL_MS = 180;
+
+// Seven frames rather than five. The burst is the cheapest robustness available
+// here — the frames cost nothing but a second of holding still, and the server
+// now discards outliers by MAD before taking the median, which needs a few more
+// samples than five to be worth doing.
+const BURST_FRAMES = 7;
+const BURST_INTERVAL_MS = 150;
 
 export default function AnaemiaScreen() {
   const videoRef = useRef(null);
   const canvasRef = useRef(null);
   const refCanvasRef = useRef(null);
   const streamRef = useRef(null);
+  const { recordAnaemia } = useReport();
 
   const [streaming, setStreaming] = useState(false);
   const [result, setResult] = useState(null);
@@ -25,6 +34,17 @@ export default function AnaemiaScreen() {
   const [loading, setLoading] = useState(false);
   const [progress, setProgress] = useState(0);
 
+  // The checklist. This is not a nicety — a phone camera pointed at an eyelid
+  // is a weak signal, and "I get breathless on stairs" is a strong one. The
+  // server weights them together, and either can produce a yes on its own.
+  const [questions, setQuestions] = useState({ symptoms: [], risks: [] });
+  const [symptoms, setSymptoms] = useState([]);
+  const [risks, setRisks] = useState([]);
+
+  useEffect(() => {
+    api.anaemiaQuestions().then(setQuestions).catch(() => {});
+  }, []);
+
   // A live camera left running on a health app is its own privacy problem —
   // stop the track as soon as the page goes away.
   useEffect(() => () => stopCamera(), []);
@@ -32,6 +52,10 @@ export default function AnaemiaScreen() {
   function stopCamera() {
     streamRef.current?.getTracks().forEach((t) => t.stop());
     streamRef.current = null;
+  }
+
+  function toggle(setter) {
+    return (id) => setter((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
   }
 
   async function startCamera() {
@@ -49,7 +73,7 @@ export default function AnaemiaScreen() {
       await videoRef.current.play();
       setStreaming(true);
     } catch {
-      setError("Couldn't access the camera. Check camera permissions, or skip this screen.");
+      setError("Couldn't access the camera. Check camera permissions, or answer the questions below instead — they alone can give you an answer.");
     }
   }
 
@@ -146,7 +170,7 @@ export default function AnaemiaScreen() {
       let focus = 0;
 
       // A burst, not a single shot. One frame can be caught mid-blink or during
-      // an autofocus hunt; five spread over a second cannot all be.
+      // an autofocus hunt; seven spread over a second cannot all be.
       for (let i = 0; i < BURST_FRAMES; i++) {
         const grab = grabCropPixels();
         if (grab) {
@@ -168,8 +192,28 @@ export default function AnaemiaScreen() {
         frames,
         reference: grabReferencePixels(),
         focusScore: focus,
+        symptoms,
+        risks,
       });
       setResult(res);
+      recordAnaemia({
+        verdict: res.verdict,
+        testNeeded: res.testNeeded,
+        headline: res.headline,
+        summary: res.summary,
+        reasons: res.reasons,
+        band: res.band,
+        pallorScore: res.pallorScore,
+        confidence: res.confidence,
+        framesUsed: res.framesUsed,
+        framesAnalysed: res.framesAnalysed,
+        symptomLabels: symptoms
+          .map((id) => questions.symptoms.find((o) => o.id === id)?.label)
+          .filter(Boolean),
+        riskLabels: risks
+          .map((id) => questions.risks.find((o) => o.id === id)?.label)
+          .filter(Boolean),
+      });
     } catch (err) {
       // 422 = the capture was readable but not good enough to score. The server
       // says exactly what to fix, so show that instead of a generic failure.
@@ -186,223 +230,337 @@ export default function AnaemiaScreen() {
 
   return (
     <div className="container" style={{ paddingTop: 32, paddingBottom: 60 }}>
-      <div style={{ maxWidth: 720 }}>
-        <h1 className="display" style={{ fontSize: "clamp(26px, 3.4vw, 38px)", lineHeight: 1.15 }}>
-          Anaemia screen
+      <div style={{ maxWidth: 760 }}>
+        <span className="section-eyebrow">
+          <Icon name="eye" size={13} /> Anaemia screening
+        </span>
+        <h1 className="display" style={{ fontSize: "clamp(26px, 3.4vw, 38px)", lineHeight: 1.15, marginTop: 8 }}>
+          Do you need a blood test?
         </h1>
         <p style={{ color: "var(--ink-soft)", marginTop: 10, fontSize: 16.5, lineHeight: 1.6 }}>
-          Gently pull down your lower eyelid so the pink inner rim fills the box, in good
-          indirect light. This is a screening flag, never a haemoglobin number — a blood
-          test is the only way to confirm anaemia.
+          Two things together: the colour of your inner eyelid, and what you have been
+          feeling. You get one answer — yes or no. This is a screening flag, never a
+          haemoglobin number, and a blood test is the only way to confirm anaemia.
         </p>
       </div>
 
       <div className="split" style={{ marginTop: 26 }}>
-      <div>
-      <div className="card" style={{ textAlign: "center" }}>
-        <div style={styles.preview}>
-          <video
-            ref={videoRef}
-            style={{ ...styles.video, display: streaming ? "block" : "none" }}
-            muted
-            playsInline
-          />
-          {!streaming && <div style={styles.placeholder}>Camera preview</div>}
-          <div style={styles.frameBox} aria-hidden="true">
-            <span style={styles.frameLabel}>inner eyelid here</span>
-          </div>
-        </div>
-        <canvas ref={canvasRef} style={{ display: "none" }} />
-        <canvas ref={refCanvasRef} style={{ display: "none" }} />
+        <div>
+          {result && <VerdictPanel result={result} />}
 
-        {error && <p style={styles.error}>{error}</p>}
-
-        {loading && (
-          <div style={{ marginTop: 14 }}>
-            <div style={styles.progressTrack}>
-              <div style={{ ...styles.progressFill, width: `${progress}%` }} />
+          {/* A capture that failed the quality gate. Actionable, and explicitly not
+              a result — showing a score from an unusable frame is how a screen ends
+              up looking confident and being wrong. */}
+          {problems.length > 0 && (
+            <div className="card" style={{ marginBottom: 18, borderInlineStart: "4px solid var(--urgent)" }}>
+              <strong style={{ fontSize: 15, display: "flex", alignItems: "center", gap: 8 }}>
+                <Icon name="alert" size={17} style={{ color: "var(--urgent)" }} />
+                Couldn't read this capture
+              </strong>
+              <p style={{ fontSize: 13.5, color: "var(--ink-soft)", marginTop: 6 }}>
+                No result was produced — nothing here is a screening outcome. Fix the following
+                and capture again:
+              </p>
+              <ul style={{ fontSize: 13.5, color: "var(--ink)", lineHeight: 1.8, paddingInlineStart: 20, marginTop: 8 }}>
+                {problems.map((p) => <li key={p.code}>{p.message}</li>)}
+              </ul>
             </div>
-            <p style={styles.progressLabel}>Capturing {BURST_FRAMES} frames — hold still…</p>
+          )}
+
+          <div className="card" style={{ textAlign: "center" }}>
+            <div style={styles.preview}>
+              <video
+                ref={videoRef}
+                style={{ ...styles.video, display: streaming ? "block" : "none" }}
+                muted
+                playsInline
+              />
+              {!streaming && (
+                <div style={styles.placeholder}>
+                  <Icon name="camera" size={34} />
+                  <span style={{ fontSize: 13.5 }}>Camera preview</span>
+                </div>
+              )}
+              <div style={styles.frameBox} aria-hidden="true">
+                <span style={styles.frameLabel}>inner eyelid here</span>
+              </div>
+            </div>
+            <canvas ref={canvasRef} style={{ display: "none" }} />
+            <canvas ref={refCanvasRef} style={{ display: "none" }} />
+
+            {error && <p style={styles.error}>{error}</p>}
+
+            {loading && (
+              <div style={{ marginTop: 14 }}>
+                <div style={styles.progressTrack}>
+                  <div style={{ ...styles.progressFill, width: `${progress}%` }} />
+                </div>
+                <p style={styles.progressLabel}>Capturing {BURST_FRAMES} frames — hold still…</p>
+              </div>
+            )}
+
+            <div style={styles.actions}>
+              {!streaming && (
+                <button className="btn btn-primary" onClick={startCamera}>
+                  <Icon name="camera" size={17} /> Turn on camera
+                </button>
+              )}
+              {streaming && (
+                <>
+                  <button className="btn btn-primary" onClick={capture} disabled={loading}>
+                    <Icon name="eye" size={17} />
+                    {loading ? "Analysing…" : "Capture & screen"}
+                  </button>
+                  <button
+                    className="btn btn-ghost"
+                    onClick={() => { stopCamera(); setStreaming(false); }}
+                    disabled={loading}
+                  >
+                    Turn off camera
+                  </button>
+                </>
+              )}
+            </div>
           </div>
-        )}
 
-        <div style={styles.actions}>
-          {!streaming && (
-            <button className="btn btn-primary" onClick={startCamera}>Turn on camera</button>
-          )}
-          {streaming && (
-            <>
-              <button className="btn btn-primary" onClick={capture} disabled={loading}>
-                {loading ? "Analysing…" : "Capture & screen"}
-              </button>
-              <button
-                className="btn btn-ghost"
-                onClick={() => { stopCamera(); setStreaming(false); }}
-                disabled={loading}
-              >
-                Turn off camera
-              </button>
-            </>
-          )}
-        </div>
-      </div>
+          {/* The checklist. Placed under the camera, but it is not secondary:
+              two of these ticked will produce a "yes" whatever the camera saw. */}
+          <div className="card" style={{ marginTop: 18 }}>
+            <div className="section-head" style={{ marginBottom: 12 }}>
+              <span className="section-eyebrow">
+                <Icon name="check" size={13} /> Step 2 — how you have been feeling
+              </span>
+              <p style={{ fontSize: 13.5, color: "var(--ink-soft)", marginTop: 8, lineHeight: 1.6 }}>
+                Tick anything true for the last few weeks. These count as much as the
+                photograph — often more.
+              </p>
+            </div>
 
-      {/* A capture that failed the quality gate. Actionable, and explicitly not
-          a result — showing a score from an unusable frame is how a screen ends
-          up looking confident and being wrong. */}
-      {problems.length > 0 && (
-        <div className="card" style={{ marginTop: 18, borderLeft: "4px solid var(--urgent)" }}>
-          <strong style={{ fontSize: 15 }}>Couldn't read this capture</strong>
-          <p style={{ fontSize: 13.5, color: "var(--ink-soft)", marginTop: 6 }}>
-            No result was produced — nothing here is a screening outcome. Fix the following
-            and capture again:
-          </p>
-          <ul style={{ fontSize: 13.5, color: "var(--ink)", lineHeight: 1.8, paddingLeft: 20, marginTop: 8 }}>
-            {problems.map((p) => <li key={p.code}>{p.message}</li>)}
-          </ul>
-        </div>
-      )}
+            <div className="choice-grid">
+              {questions.symptoms.map((o) => (
+                <button
+                  key={o.id}
+                  type="button"
+                  className="choice"
+                  aria-pressed={symptoms.includes(o.id)}
+                  onClick={() => toggle(setSymptoms)(o.id)}
+                >
+                  <span className="choice-icon">
+                    <Icon name={symptoms.includes(o.id) ? "check" : "minus"} size={17} />
+                  </span>
+                  <span>{o.label}</span>
+                </button>
+              ))}
+            </div>
 
-      {result?.ok && <ResultPanel result={result} />}
-      </div>
+            <p style={{ ...styles.subhead, marginTop: 20 }}>Anything else that applies</p>
+            <div className="choice-grid">
+              {questions.risks.map((o) => (
+                <button
+                  key={o.id}
+                  type="button"
+                  className="choice"
+                  aria-pressed={risks.includes(o.id)}
+                  onClick={() => toggle(setRisks)(o.id)}
+                >
+                  <span className="choice-icon">
+                    <Icon name={risks.includes(o.id) ? "check" : "minus"} size={17} />
+                  </span>
+                  <span>{o.label}</span>
+                </button>
+              ))}
+            </div>
 
-      <div className="aside-sticky" style={{ display: "grid", gap: 16 }}>
-        <div className="aside-card">
-          <div className="aside-title">How to get a good reading</div>
-          <ol style={asideStyles.list}>
-            <li>Stand near a window in <strong>daylight</strong>. Do not use the flash.</li>
-            <li>Gently pull the lower lid down so the <strong>pink inner rim</strong> shows.</li>
-            <li>Fill the dashed box with that pink area, not the whole eye.</li>
-            <li>Rest your elbow on something and hold still while it captures.</li>
-          </ol>
-          <p style={asideStyles.note}>
-            If the capture is rejected, that is the screen refusing to guess from a bad
-            photo. Fix what it asks for and try again.
-          </p>
-        </div>
-
-        <div className="aside-card" style={{ borderInlineStart: "4px solid var(--urgent)" }}>
-          <div className="aside-title" style={{ color: "var(--urgent)" }}>This is not a blood test</div>
-          <p style={asideStyles.note}>
-            It looks at colour only. It cannot give a haemoglobin number and it cannot
-            rule anaemia out. If you feel tired, breathless or dizzy, ask for a blood
-            test even if this screen finds nothing.
-          </p>
+            <p style={styles.checklistNote}>
+              {symptoms.length + risks.length === 0
+                ? "Nothing ticked yet."
+                : `${symptoms.length + risks.length} ticked — these are sent with the capture and weighed alongside it.`}
+            </p>
+          </div>
         </div>
 
-        <div className="aside-card">
-          <div className="aside-title">Signs worth acting on</div>
-          <ul style={asideStyles.list}>
-            <li>Getting breathless on stairs or while cooking</li>
-            <li>Tiredness that sleep does not fix</li>
-            <li>Dizziness on standing up</li>
-            <li>Heavy periods, soaking a pad every hour</li>
-            <li>Craving ice, chalk or mud</li>
-          </ul>
+        <div className="aside-sticky" style={{ display: "grid", gap: 16 }}>
+          <div className="aside-card">
+            <div className="aside-title">How to get a good reading</div>
+            <ol style={asideStyles.list}>
+              <li>Stand near a window in <strong>daylight</strong>. Do not use the flash.</li>
+              <li>Gently pull the lower lid down so the <strong>pink inner rim</strong> shows.</li>
+              <li>Fill the dashed box with that pink area, not the whole eye.</li>
+              <li>Rest your elbow on something and hold still while it captures.</li>
+            </ol>
+            <p style={asideStyles.note}>
+              If the capture is rejected, that is the screen refusing to guess from a bad
+              photo. Fix what it asks for and try again.
+            </p>
+          </div>
+
+          <div className="aside-card" style={{ borderInlineStart: "4px solid var(--urgent)" }}>
+            <div className="aside-title" style={{ color: "var(--urgent)" }}>This is not a blood test</div>
+            <p style={asideStyles.note}>
+              It looks at colour and at what you told us. It cannot give a haemoglobin
+              number and it cannot rule anaemia out. When it is unsure it says
+              <strong> yes, get tested</strong> — because an unnecessary free test costs an
+              afternoon and a missed anaemia costs far more.
+            </p>
+          </div>
+
+          <div className="aside-card">
+            <div className="aside-title">The test is free</div>
+            <p style={asideStyles.note}>
+              Under <strong>Anemia Mukt Bharat</strong>, haemoglobin testing and iron-folic
+              acid tablets are free at the sub-centre and the Health and Wellness Centre.
+              Ask the ASHA worker or the ANM — you do not need a referral or a card.
+            </p>
+            <Link to="/report" className="btn-text" style={{ marginTop: 10 }}>
+              <Icon name="report" size={13} /> Put this in my health report
+            </Link>
+          </div>
         </div>
-      </div>
       </div>
     </div>
   );
 }
 
-const asideStyles = {
-  list: {
-    fontSize: 13.5, color: "var(--ink-soft)", lineHeight: 1.7,
-    paddingInlineStart: 20, margin: 0, display: "grid", gap: 7,
-  },
-  note: { fontSize: 13, color: "var(--ink-soft)", lineHeight: 1.7, marginTop: 10 },
-};
-
-function ResultPanel({ result }) {
+/**
+ * The answer.
+ *
+ * The old version led with a pill, then two percentage meters, then a paragraph.
+ * A person reading that has to do the interpretation herself, and the most
+ * common outcome of "51%, confidence 44%" is that nobody does anything. So the
+ * verdict is now the largest thing on the page, in words, with the reasons under
+ * it and the numbers folded away behind a toggle for whoever wants them.
+ */
+function VerdictPanel({ result }) {
   const [showDetail, setShowDetail] = useState(false);
-
-  const pillClass = {
-    high: "pill-urgent",
-    borderline: "pill-routine",
-    low: "pill-selfcare",
-  }[result.band] || "pill-routine";
-
-  const bandLabel = {
-    high: "Pallor detected — get a blood test",
-    borderline: "Borderline — a blood test is advisable",
-    low: "No pallor detected by this screen",
-  }[result.band];
+  const yes = result.testNeeded;
 
   return (
-    <div className="card" style={{ marginTop: 18 }}>
-      <span className={`pill ${pillClass}`}>{bandLabel}</span>
+    <div className={`verdict ${yes ? "verdict-yes" : "verdict-no"}`} style={{ marginBottom: 18 }}>
+      <span className="verdict-eyebrow">
+        {yes ? "Screening result — action needed" : "Screening result"}
+      </span>
 
-      <div style={{ marginTop: 16 }}>
-        <Meter label="Pallor score" value={result.pallorScore} />
-        <Meter label="Confidence in this reading" value={result.confidence} />
+      <div className="verdict-answer">
+        <span className="verdict-mark">
+          <Icon name={yes ? "alert" : "check"} size={26} strokeWidth={2.2} />
+        </span>
+        <span>{result.headline}</span>
       </div>
 
-      <p style={{ marginTop: 14, fontSize: 14.5, color: "var(--ink)", lineHeight: 1.65 }}>
-        {result.advice}
-      </p>
+      <p className="verdict-because">{result.summary}</p>
 
-      {result.confidence < 0.5 && (
-        <p style={styles.lowConfidence}>
-          Confidence is low, so treat this as inconclusive rather than reassuring.
-          Capturing again in better light will give a more reliable reading.
-        </p>
+      {result.reasons?.length > 0 && (
+        <>
+          <span className="verdict-eyebrow">Why</span>
+          <ul className="verdict-reasons">
+            {result.reasons.map((r, i) => <li key={i}>{r}</li>)}
+          </ul>
+        </>
       )}
 
-      <p style={{ marginTop: 12, fontSize: 12.5, color: "var(--ink-soft)", lineHeight: 1.6 }}>
-        {result.note}
-      </p>
-
-      <button
-        type="button"
-        onClick={() => setShowDetail((s) => !s)}
-        style={styles.detailToggle}
-      >
-        {showDetail ? "Hide" : "Show"} how this was measured
-      </button>
-
-      {showDetail && (
-        <div style={styles.detail}>
-          <p style={{ marginBottom: 10 }}>
-            {result.framesUsed} of {result.framesAnalysed} captured frames were usable;
-            they agreed {Math.round(result.agreement * 100)}%.
-            {result.illuminantCorrected
-              ? " Lighting colour was corrected using the whole scene."
-              : " Lighting colour could not be corrected — the result is more sensitive to the light source."}
-          </p>
-          <p style={{ marginBottom: 10 }}>
-            {Math.round(result.coverage.tissueFraction * 100)}% of the box looked like
-            eyelid tissue; {Math.round(result.coverage.glareFraction * 100)}% was glare.
-          </p>
-          <table style={styles.table}>
-            <thead>
-              <tr>
-                <th style={styles.th}>Measure</th>
-                <th style={styles.th}>Value</th>
-                <th style={styles.th}>Healthy ref.</th>
-                <th style={styles.th}>Pushes toward</th>
-              </tr>
-            </thead>
-            <tbody>
-              {Object.entries(result.breakdown).map(([name, m]) => (
-                <tr key={name}>
-                  <td style={styles.td}>{FEATURE_LABELS[name] || name}</td>
-                  <td style={styles.td}>{m.value}</td>
-                  <td style={styles.td}>{m.reference}</td>
-                  <td style={{ ...styles.td, color: m.contribution > 0 ? "var(--urgent)" : "var(--selfcare)" }}>
-                    {m.contribution > 0 ? "paler" : "healthier"}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-          <p style={{ marginTop: 10, fontStyle: "italic" }}>
-            These thresholds are uncalibrated starting values, not fitted to this
-            population against real haemoglobin results. Treat the direction as
-            meaningful and the exact number as approximate.
-          </p>
+      {yes && (
+        <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 4 }}>
+          <a href="tel:104" className="btn btn-emergency btn-sm">
+            <Icon name="phone" size={15} /> Health advice 104
+          </a>
+          <Link to="/report" className="btn btn-ghost btn-sm">
+            <Icon name="report" size={15} /> Add to my report
+          </Link>
+          <Link to="/nearby" className="btn btn-ghost btn-sm">
+            <Icon name="pin" size={15} /> Nearest centre
+          </Link>
         </div>
       )}
+
+      <button type="button" onClick={() => setShowDetail((s) => !s)} className="btn-text">
+        {showDetail ? "Hide" : "Show"} how this was measured
+        <Icon name={showDetail ? "minus" : "plus"} size={13} />
+      </button>
+
+      {showDetail && <Detail result={result} />}
+    </div>
+  );
+}
+
+function Detail({ result }) {
+  return (
+    <div style={styles.detail}>
+      <div className="data-list">
+        <div className="data-row">
+          <span className="data-key">Pallor score</span>
+          <span className="data-value">{result.pallorScore} ({result.band})</span>
+        </div>
+        <div className="data-row">
+          <span className="data-key">Confidence in the reading</span>
+          <span className="data-value">{Math.round(result.confidence * 100)}%</span>
+        </div>
+        <div className="data-row">
+          <span className="data-key">Frames captured / usable / in consensus</span>
+          <span className="data-value">
+            {result.framesAnalysed} / {result.framesUsed} / {result.framesInConsensus ?? result.framesUsed}
+          </span>
+        </div>
+        {result.outliersDropped > 0 && (
+          <div className="data-row">
+            <span className="data-key">Outlier frames discarded</span>
+            <span className="data-value">{result.outliersDropped}</span>
+          </div>
+        )}
+        <div className="data-row">
+          <span className="data-key">Frames agreed</span>
+          <span className="data-value">{Math.round(result.agreement * 100)}%</span>
+        </div>
+        <div className="data-row">
+          <span className="data-key">Lighting colour corrected</span>
+          <span className="data-value">{result.illuminantCorrected ? "Yes" : "No"}</span>
+        </div>
+        <div className="data-row">
+          <span className="data-key">Box that looked like eyelid tissue</span>
+          <span className="data-value">{Math.round(result.coverage.tissueFraction * 100)}%</span>
+        </div>
+        <div className="data-row">
+          <span className="data-key">Glare in the box</span>
+          <span className="data-value">{Math.round(result.coverage.glareFraction * 100)}%</span>
+        </div>
+        <div className="data-row">
+          <span className="data-key">Symptoms counted</span>
+          <span className="data-value">{result.symptomCount ?? 0}</span>
+        </div>
+      </div>
+
+      <table style={styles.table}>
+        <thead>
+          <tr>
+            <th style={styles.th}>Colour measure</th>
+            <th style={styles.th}>Eyelid</th>
+            <th style={styles.th}>Your skin</th>
+            <th style={styles.th}>Boundary</th>
+            <th style={styles.th}>Pushes toward</th>
+          </tr>
+        </thead>
+        <tbody>
+          {Object.entries(result.breakdown).map(([name, m]) => (
+            <tr key={name}>
+              <td style={styles.td}>{FEATURE_LABELS[name] || name}</td>
+              <td style={styles.td}>{m.value}</td>
+              <td style={styles.td}>{m.skin ?? "—"}</td>
+              <td style={styles.td}>{m.reference}</td>
+              <td style={{ ...styles.td, fontWeight: 600 }}>
+                {m.contribution > 0 ? "paler" : "healthier"}
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+
+      <p style={{ marginTop: 10, fontStyle: "italic", fontSize: 12 }}>
+        Each measure is compared against the skin around your eye, which is lit by the
+        same light — that is what stops a yellow bulb or a cloudy day changing the
+        answer. The boundary column is roughly where mild anaemia begins. These are
+        literature-informed values, not fitted to this population against real
+        haemoglobin results, so treat the direction as meaningful and the exact number
+        as approximate. {result.note}
+      </p>
     </div>
   );
 }
@@ -414,20 +572,13 @@ const FEATURE_LABELS = {
   pallorRatio: "Pallor ratio",
 };
 
-function Meter({ label, value }) {
-  const pct = Math.round(value * 100);
-  return (
-    <div style={{ marginBottom: 12 }}>
-      <div style={styles.meterRow}>
-        <span>{label}</span>
-        <span style={{ fontWeight: 700 }}>{pct}%</span>
-      </div>
-      <div style={styles.meterTrack}>
-        <div style={{ ...styles.meterFill, width: `${pct}%` }} />
-      </div>
-    </div>
-  );
-}
+const asideStyles = {
+  list: {
+    fontSize: 13.5, color: "var(--ink-soft)", lineHeight: 1.7,
+    paddingInlineStart: 20, margin: 0, display: "grid", gap: 7,
+  },
+  note: { fontSize: 13, color: "var(--ink-soft)", lineHeight: 1.7, marginTop: 10 },
+};
 
 const styles = {
   preview: {
@@ -439,8 +590,8 @@ const styles = {
   },
   video: { width: "100%", height: "100%", objectFit: "cover" },
   placeholder: {
-    display: "flex", alignItems: "center", justifyContent: "center",
-    height: "100%", color: "var(--ink-soft)",
+    display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
+    gap: 10, height: "100%", color: "var(--ink-muted)",
   },
   frameBox: {
     position: "absolute",
@@ -453,34 +604,25 @@ const styles = {
     fontSize: 11, color: "var(--rose)", fontWeight: 600, letterSpacing: "0.03em",
   },
   actions: { marginTop: 16, display: "flex", gap: 10, justifyContent: "center", flexWrap: "wrap" },
-  error: { color: "var(--emergency)", fontSize: 13.5, marginTop: 12 },
+  error: { color: "var(--emergency)", fontSize: 13.5, marginTop: 12, lineHeight: 1.6 },
   progressTrack: {
     height: 5, borderRadius: 999, background: "var(--cream-dim)", overflow: "hidden",
   },
   progressFill: { height: "100%", background: "var(--rose)", transition: "width 0.15s ease" },
   progressLabel: { fontSize: 12.5, color: "var(--ink-soft)", marginTop: 7 },
-  meterRow: {
-    display: "flex", justifyContent: "space-between",
-    fontSize: 13, color: "var(--ink-soft)", marginBottom: 5,
+  subhead: {
+    fontSize: 12, fontWeight: 700, textTransform: "uppercase",
+    letterSpacing: "0.07em", color: "var(--rose-deep)", marginBottom: 10,
   },
-  meterTrack: { height: 8, borderRadius: 999, background: "var(--cream-dim)", overflow: "hidden" },
-  meterFill: { height: "100%", background: "var(--rose)", borderRadius: 999 },
-  lowConfidence: {
-    marginTop: 12, padding: "10px 12px", borderRadius: 10,
-    background: "var(--cream-dim)", fontSize: 13, color: "var(--ink-soft)", lineHeight: 1.6,
-  },
-  detailToggle: {
-    marginTop: 14, background: "none", border: "none", padding: 0,
-    color: "var(--rose-deep)", fontWeight: 600, fontSize: 13, textDecoration: "underline",
-  },
+  checklistNote: { fontSize: 12.5, color: "var(--ink-muted)", marginTop: 14, fontWeight: 600 },
   detail: {
-    marginTop: 12, fontSize: 12.5, color: "var(--ink-soft)", lineHeight: 1.65,
-    borderTop: "1px solid var(--cream-dim)", paddingTop: 12,
+    marginTop: 4, fontSize: 12.5, lineHeight: 1.65,
+    borderTop: "1px solid currentColor", paddingTop: 12, opacity: 0.95,
   },
-  table: { width: "100%", borderCollapse: "collapse", fontSize: 12 },
+  table: { width: "100%", borderCollapse: "collapse", fontSize: 12, marginTop: 14 },
   th: {
-    textAlign: "left", padding: "6px 4px", borderBottom: "1px solid var(--cream-dim)",
-    color: "var(--ink-soft)", fontWeight: 600,
+    textAlign: "start", padding: "6px 4px", borderBottom: "1px solid currentColor",
+    fontWeight: 600, opacity: 0.75,
   },
-  td: { padding: "6px 4px", borderBottom: "1px solid var(--cream-dim)" },
+  td: { padding: "6px 4px", borderBottom: "1px solid currentColor" },
 };

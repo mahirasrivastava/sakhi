@@ -145,38 +145,10 @@ export function formatDigipin(code) {
   return `${pin.slice(0, 3)}-${pin.slice(3, 6)}-${pin.slice(6)}`;
 }
 
-// ---------------------------------------------------------------------------
-// Emergency numbers
-// ---------------------------------------------------------------------------
-//
-// 108 is the free emergency ambulance line across most Indian states.
-// 102 is the free maternity/infant transport line (Janani Express and similar),
-// which is the correct number for a pregnancy emergency in many states and is
-// often faster than 108 for that specific case.
-// 112 is the single national emergency number, which routes to police/fire/medical.
-//
-// All three are dialled directly rather than through any dispatcher of ours:
-// putting our own routing between a girl and an ambulance would add a point of
-// failure to the one flow that must never have one.
-export const EMERGENCY_NUMBERS = [
-  {
-    number: "108",
-    label: "Ambulance (108)",
-    detail: "Free emergency ambulance in most states. Use this for any medical emergency.",
-    primary: true,
-  },
-  {
-    number: "102",
-    label: "Maternity ambulance (102)",
-    detail: "Free transport for pregnancy, delivery and newborn emergencies.",
-    maternal: true,
-  },
-  {
-    number: "112",
-    label: "All emergencies (112)",
-    detail: "National emergency number — police, fire and medical.",
-  },
-];
+// The helpline directory used to live here, next to the location code, because
+// the two are dialled together. It has since outgrown three numbers and moved to
+// helplines.js — see that file for 108/102/112 and the sixteen other national
+// lines, grouped by what has actually happened to the person calling.
 
 /**
  * Builds the message to read out or send to a dispatcher.

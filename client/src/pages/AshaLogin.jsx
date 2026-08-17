@@ -2,10 +2,20 @@ import React, { useEffect, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../context/AuthContext.jsx";
 import { api } from "../api.js";
+import Icon from "../components/Icon.jsx";
+import ScriptField from "../components/ScriptField.jsx";
 
 // Two modes on one screen:
 //   "signin"   — returning worker: ID + password
 //   "activate" — first time: ID + one-time code issued by the PHC -> choose password
+//
+// A note on the fields. Worker IDs and activation codes go through ScriptField
+// with keyboard="latin": they are ASCII on the card in the worker's hand, so
+// transliterating them into her app language would produce a string the server
+// has never seen. The three PASSWORD fields are deliberately plain <input>s —
+// an on-screen keyboard renders every tapped key at 19px in a panel anyone
+// standing nearby can read, which is the wrong trade for a credential that
+// unlocks other people's health records.
 export default function AshaLogin() {
   const { login, activate, isAuthenticated, notice, setNotice } = useAuth();
   const navigate = useNavigate();
@@ -31,7 +41,7 @@ export default function AshaLogin() {
   return (
     <div className="container" style={{ paddingTop: 44, paddingBottom: 60, maxWidth: 520 }}>
       <div style={{ textAlign: "center" }}>
-        <div style={styles.lockMark} aria-hidden="true">🔒</div>
+        <div style={styles.lockMark} aria-hidden="true"><Icon name="lock" size={24} /></div>
         <h1 className="display" style={{ fontSize: 26, marginTop: 12 }}>ASHA & clinician sign-in</h1>
         <p style={{ color: "var(--ink-soft)", marginTop: 8, fontSize: 14.5, lineHeight: 1.65 }}>
           This area holds real patients' health records, many of them minors.
@@ -43,7 +53,7 @@ export default function AshaLogin() {
       {notice && (
         <div style={styles.notice} role="status">
           {notice}
-          <button onClick={() => setNotice(null)} style={styles.noticeClose} aria-label="Dismiss">✕</button>
+          <button onClick={() => setNotice(null)} style={styles.noticeClose} aria-label="Dismiss"><Icon name="close" size={14} /></button>
         </div>
       )}
 
@@ -141,9 +151,10 @@ function SignInForm({ onLogin, onNeedActivation }) {
       </p>
 
       <Field label="Worker ID" hint="Printed on your ASHA / ANM identity card">
-        <input
+        <ScriptField
           value={workerId}
-          onChange={(e) => setWorkerId(e.target.value)}
+          onValueChange={setWorkerId}
+          keyboard="latin"
           placeholder="ASHA-KA-0001"
           autoComplete="username"
           autoCapitalize="characters"
@@ -242,7 +253,7 @@ function ActivateForm({ onActivate, policy, onDone, onSwitchToSignIn }) {
   if (success) {
     return (
       <div className="card" style={styles.card}>
-        <p style={{ fontSize: 15, color: "var(--success-ink)", fontWeight: 600 }}>✓ {success}</p>
+        <p style={styles.successLine}><Icon name="check" size={17} /> {success}</p>
         <p style={{ fontSize: 13.5, color: "var(--ink-soft)", marginTop: 10, lineHeight: 1.65 }}>
           Your one-time activation code has now been used and will not work again.
           If anyone else asks you for it, report it to your supervisor.
@@ -270,9 +281,10 @@ function ActivateForm({ onActivate, policy, onDone, onSwitchToSignIn }) {
       </p>
 
       <Field label="Worker ID">
-        <input
+        <ScriptField
           value={workerId}
-          onChange={(e) => setWorkerId(e.target.value)}
+          onValueChange={setWorkerId}
+          keyboard="latin"
           placeholder="ASHA-KA-0001"
           autoCapitalize="characters"
           spellCheck={false}
@@ -282,9 +294,10 @@ function ActivateForm({ onActivate, policy, onDone, onSwitchToSignIn }) {
       </Field>
 
       <Field label="One-time activation code" hint="Given to you by your PHC supervisor. Works once.">
-        <input
+        <ScriptField
           value={code}
-          onChange={(e) => setCode(e.target.value)}
+          onValueChange={setCode}
+          keyboard="latin"
           placeholder="XXXX-XXXX-XXXX"
           autoCapitalize="characters"
           spellCheck={false}
@@ -439,6 +452,10 @@ const styles = {
   code: {
     fontFamily: "ui-monospace, monospace", fontSize: 12, background: "var(--info-chip)",
     padding: "1px 5px", borderRadius: 5,
+  },
+  successLine: {
+    display: "flex", alignItems: "center", gap: 8,
+    fontSize: 15, color: "var(--success-ink)", fontWeight: 600,
   },
   footNote: { fontSize: 12.5, color: "var(--ink-muted)", marginTop: 22, textAlign: "center", lineHeight: 1.6 },
 };

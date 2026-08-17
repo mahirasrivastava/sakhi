@@ -1,8 +1,12 @@
 import React, { useState, useRef } from "react";
 import { Link } from "react-router-dom";
 import { useLanguage } from "../context/LanguageContext.jsx";
+import { useReport } from "../context/ReportContext.jsx";
 import { api } from "../api.js";
 import ResultCard from "./ResultCard.jsx";
+import ScriptField from "./ScriptField.jsx";
+import Icon from "./Icon.jsx";
+import { callsFor } from "../helplines.js";
 import { speechRecognitionSupported, startListening } from "../speech.js";
 
 const SEVERITY_LABELS = [
@@ -11,8 +15,9 @@ const SEVERITY_LABELS = [
 
 export default function TriageForm({ symptomOptions, title, intro, showPregnant = true }) {
   const { t, lang } = useLanguage();
+  const { recordTriage } = useReport();
   const [symptoms, setSymptoms] = useState([]);
-  const [durationDays, setDurationDays] = useState(1);
+  const [durationDays, setDurationDays] = useState("1");
   const [severity, setSeverity] = useState(2);
   const [freeText, setFreeText] = useState("");
   const [isPregnantOrPossible, setPregnant] = useState(false);
@@ -50,10 +55,23 @@ export default function TriageForm({ symptomOptions, title, intro, showPregnant 
     setSession(null);
     try {
       const result = await api.triage({
-        symptoms, durationDays: Number(durationDays), severity: Number(severity),
+        symptoms, durationDays: Number(durationDays) || 0, severity: Number(severity),
         freeText, isPregnantOrPossible: showPregnant ? isPregnantOrPossible : false, language: lang,
       });
       setSession(result);
+      // Filed into the health report so it can be printed alongside the anaemia
+      // screen and the prescription reading, rather than being one more result
+      // that vanishes when the tab closes.
+      recordTriage({
+        session: result,
+        symptomLabels: symptoms
+          .map((id) => symptomOptions.find((o) => o.id === id))
+          .filter(Boolean)
+          .map((o) => o.en),
+        durationDays: Number(durationDays) || 0,
+        severity: Number(severity),
+        isPregnantOrPossible: showPregnant ? isPregnantOrPossible : false,
+      });
       window.scrollTo({ top: 0, behavior: "smooth" });
     } catch (err) {
       setError(err.message);
@@ -66,7 +84,7 @@ export default function TriageForm({ symptomOptions, title, intro, showPregnant 
     setSession(null);
     setSymptoms([]);
     setFreeText("");
-    setDurationDays(1);
+    setDurationDays("1");
     setSeverity(2);
     setPregnant(false);
   }
@@ -80,11 +98,11 @@ export default function TriageForm({ symptomOptions, title, intro, showPregnant 
           <div>
             <ResultCard session={session} />
             <button className="btn btn-ghost btn-lg" style={{ marginTop: 18 }} onClick={reset}>
-              ↻ Start a new check-in
+              <Icon name="refresh" size={17} /> Start a new check-in
             </button>
           </div>
           <div>
-            <HelpAside />
+            <HelpAside maternal={isPregnantOrPossible} />
           </div>
         </div>
       ) : (
@@ -104,7 +122,9 @@ export default function TriageForm({ symptomOptions, title, intro, showPregnant 
                     onClick={() => toggleSymptom(opt.id)}
                     aria-pressed={symptoms.includes(opt.id)}
                   >
-                    <span className="choice-icon" aria-hidden="true">{opt.icon || "•"}</span>
+                    <span className="choice-icon">
+                      <Icon name={opt.icon || "info"} size={19} />
+                    </span>
                     <span>{opt[lang] || opt.en}</span>
                   </button>
                 ))}
@@ -117,10 +137,17 @@ export default function TriageForm({ symptomOptions, title, intro, showPregnant 
             </Step>
 
             <Step n={2} label={t("triage_duration")} hint="Roughly is fine. Put 0 if it started today.">
-              <input
-                type="number" min="0" max="60" value={durationDays}
-                onChange={(e) => setDurationDays(e.target.value)}
-                className="field-input" style={{ maxWidth: 200 }}
+              <ScriptField
+                type="number"
+                inputMode="numeric"
+                min="0"
+                max="60"
+                value={durationDays}
+                onValueChange={setDurationDays}
+                keyboard="numeric"
+                className="field-input"
+                style={{ maxWidth: 200 }}
+                wrapperStyle={{ maxWidth: 200 }}
               />
             </Step>
 
@@ -146,11 +173,13 @@ export default function TriageForm({ symptomOptions, title, intro, showPregnant 
                       type="button"
                       key={String(v)}
                       className="choice"
-                      style={{ flex: "0 1 160px", justifyContent: "center" }}
+                      style={{ flex: "0 1 160px" }}
                       aria-pressed={isPregnantOrPossible === v}
                       onClick={() => setPregnant(v)}
                     >
-                      <span className="choice-icon" aria-hidden="true">{v ? "🤰" : "🚫"}</span>
+                      <span className="choice-icon">
+                        <Icon name={v ? "pregnancy" : "ban"} size={19} />
+                      </span>
                       <span>{v ? "Yes, or maybe" : "No"}</span>
                     </button>
                   ))}
@@ -161,15 +190,17 @@ export default function TriageForm({ symptomOptions, title, intro, showPregnant 
             <Step
               n={showPregnant ? 5 : 4}
               label={t("triage_freetext")}
-              hint="Optional. Type, or tap the microphone and just speak."
+              hint="Optional. Type in your own script, tap the microphone and speak, or use the keyboard button in the corner of the box."
             >
               <div style={{ position: "relative" }}>
-                <textarea
+                <ScriptField
+                  as="textarea"
                   value={freeText}
-                  onChange={(e) => setFreeText(e.target.value)}
+                  onValueChange={setFreeText}
                   rows={4}
                   className="field-input"
-                  style={{ resize: "vertical", paddingRight: 58 }}
+                  style={{ resize: "vertical", paddingInlineEnd: 92 }}
+                  adornmentInset={54}
                 />
                 {speechRecognitionSupported() && (
                   <button
@@ -183,25 +214,27 @@ export default function TriageForm({ symptomOptions, title, intro, showPregnant 
                       color: listening ? "var(--on-brand)" : "var(--rose-deep)",
                     }}
                   >
-                    {listening ? "●" : "🎤"}
+                    <Icon name="mic" size={17} />
                   </button>
                 )}
               </div>
-              {listening && <span style={styles.listening}>● Listening — speak now</span>}
+              {listening && <span style={styles.listening}>Listening — speak now</span>}
             </Step>
 
             {error && <p style={styles.error} role="alert">{error}</p>}
 
             <button type="submit" className="btn btn-primary btn-lg" disabled={loading} style={{ marginTop: 8 }}>
-              {loading ? t("triage_loading") : `${t("triage_submit")} →`}
+              {loading ? t("triage_loading") : t("triage_submit")}
+              {!loading && <Icon name="arrowRight" size={18} />}
             </button>
             <p style={styles.privacy}>
-              🔒 Nothing here is linked to your name. No account, no phone number.
+              <Icon name="lock" size={14} style={{ display: "inline-block", verticalAlign: "-2px", marginInlineEnd: 5 }} />
+              Nothing here is linked to your name. No account, no phone number.
             </p>
           </div>
 
           <div>
-            <HelpAside />
+            <HelpAside maternal={showPregnant && isPregnantOrPossible} />
           </div>
         </form>
       )}
@@ -241,7 +274,9 @@ function Step({ n, label, hint, children }) {
 
 /** The right-hand column. It fills the width with something genuinely useful
  *  rather than padding — emergency numbers, and what happens next. */
-function HelpAside() {
+function HelpAside({ maternal = false }) {
+  const lines = callsFor({ maternal, limit: 3 });
+
   return (
     <div className="aside-sticky" style={{ display: "grid", gap: 16 }}>
       <div className="aside-card" style={{ borderInlineStart: "4px solid var(--emergency)" }}>
@@ -250,11 +285,25 @@ function HelpAside() {
           Do not wait for a result. Call now — these are free.
         </p>
         <div style={{ display: "grid", gap: 8, marginTop: 12 }}>
-          <a href="tel:108" className="btn btn-primary" style={styles.asideBtn}>🚑 Ambulance — 108</a>
-          <a href="tel:102" className="btn btn-ghost" style={styles.asideBtn}>🤰 Pregnancy — 102</a>
-          <a href="tel:112" className="btn btn-ghost" style={styles.asideBtn}>☎️ Any emergency — 112</a>
+          {lines.map((h, i) => (
+            <a
+              key={h.number}
+              href={`tel:${h.dial}`}
+              className={`btn ${i === 0 ? "btn-emergency" : "btn-ghost"}`}
+              style={styles.asideBtn}
+            >
+              <Icon name={h.icon} size={16} />
+              <span>{h.label}</span>
+              <strong style={styles.asideNum}>{h.number}</strong>
+            </a>
+          ))}
         </div>
-        <Link to="/nearby" style={styles.asideLink}>📍 Find your location code & nearest hospital →</Link>
+        <Link to="/helplines" style={styles.asideLink}>
+          <Icon name="phone" size={13} /> Women, children and mental health lines
+        </Link>
+        <Link to="/nearby" style={styles.asideLink}>
+          <Icon name="pin" size={13} /> Location code &amp; nearest hospital
+        </Link>
       </div>
 
       <div className="aside-card">
@@ -270,7 +319,7 @@ function HelpAside() {
         <div className="aside-title">Your privacy</div>
         <ul style={styles.steps}>
           <li>No name, no phone number, no account.</li>
-          <li>Free, in {""}your own language.</li>
+          <li>Free, in your own language.</li>
           <li>A health worker only ever sees the urgency, not your identity.</li>
         </ul>
       </div>
@@ -288,16 +337,21 @@ const styles = {
   severityWord: { fontSize: 14.5, color: "var(--ink-soft)" },
   mic: {
     position: "absolute", top: 10, insetInlineEnd: 10, width: 38, height: 38,
-    borderRadius: "50%", border: "none", fontSize: 17,
+    borderRadius: "50%", border: "none",
+    display: "flex", alignItems: "center", justifyContent: "center",
   },
   listening: { fontSize: 13, color: "var(--rose)", marginTop: 6, display: "block", fontWeight: 600 },
   error: { color: "var(--emergency)", fontSize: 14, marginBottom: 10 },
   privacy: { fontSize: 12.5, color: "var(--ink-muted)", marginTop: 14, lineHeight: 1.6 },
   asideText: { fontSize: 13.5, color: "var(--ink-soft)", lineHeight: 1.6, margin: 0 },
-  asideBtn: { justifyContent: "center", textDecoration: "none", fontSize: 14.5, padding: "11px 16px" },
+  asideBtn: { justifyContent: "flex-start", textDecoration: "none", fontSize: 14, padding: "11px 14px" },
+  asideNum: {
+    marginInlineStart: "auto",
+    fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace",
+  },
   asideLink: {
-    display: "block", marginTop: 14, fontSize: 13,
-    color: "var(--rose-deep)", fontWeight: 600, textDecoration: "underline",
+    display: "flex", alignItems: "center", gap: 6, marginTop: 12, fontSize: 13,
+    color: "var(--rose-deep)", fontWeight: 600, textDecoration: "none",
   },
   steps: {
     fontSize: 13.5, color: "var(--ink-soft)", lineHeight: 1.7,

@@ -36,5 +36,19 @@
   "dashboard_title": "Flagged cases",
   "dashboard_subtitle": "Ranked by urgency, with the full reasoning behind every decision.",
   "impact_title": "Why this matters",
-  "footer_disclaimer": "Sakhi triages and routes. It never diagnoses, never prescribes, and always points toward a real clinician."
+  "footer_disclaimer": "Sakhi triages and routes. It never diagnoses, never prescribes, and always points toward a real clinician.",
+  "kbd_title": "On-screen keyboard",
+  "kbd_open": "Open the on-screen keyboard",
+  "kbd_hide": "Hide keyboard",
+  "kbd_space": "Space",
+  "kbd_backspace": "Backspace",
+  "kbd_enter": "Enter",
+  "kbd_translit_hint": "Type in English letters — “bukhaar” becomes your own script as you type.",
+  "nav_helplines": "Helplines",
+  "nav_report": "Health report",
+  "anaemia_verdict_yes": "Yes — get a blood test",
+  "anaemia_verdict_no": "No test needed right now",
+  "nav_group_symptoms": "Check symptoms",
+  "nav_group_screening": "Screening",
+  "nav_group_help": "Find help"
 }

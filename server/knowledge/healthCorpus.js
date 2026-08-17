@@ -12,14 +12,14 @@
 // it doesn't go in.
 
 export const CATEGORIES = [
-  { id: "maternal", label: { en: "Pregnancy & maternal health", hi: "गर्भावस्था और मातृ स्वास्थ्य", kn: "ಗರ್ಭಧಾರಣೆ ಮತ್ತು ತಾಯಿ ಆರೋಗ್ಯ" }, icon: "🤰" },
-  { id: "menstrual", label: { en: "Periods & menstrual health", hi: "मासिक धर्म स्वास्थ्य", kn: "ಮುಟ್ಟು ಮತ್ತು ಋತುಚಕ್ರ ಆರೋಗ್ಯ" }, icon: "🩸" },
-  { id: "anaemia", label: { en: "Anaemia & nutrition", hi: "एनीमिया और पोषण", kn: "ರಕ್ತಹೀನತೆ ಮತ್ತು ಪೋಷಣೆ" }, icon: "🥗" },
-  { id: "adolescent", label: { en: "Adolescent health", hi: "किशोर स्वास्थ्य", kn: "ಹದಿಹರೆಯದ ಆರೋಗ್ಯ" }, icon: "🌱" },
-  { id: "infection", label: { en: "Infections & fever", hi: "संक्रमण और बुखार", kn: "ಸೋಂಕು ಮತ್ತು ಜ್ವರ" }, icon: "🤒" },
-  { id: "emergency", label: { en: "When to go to hospital immediately", hi: "तुरंत अस्पताल कब जाएं", kn: "ತಕ್ಷಣ ಆಸ್ಪತ್ರೆಗೆ ಯಾವಾಗ ಹೋಗಬೇಕು" }, icon: "🚨" },
-  { id: "hygiene", label: { en: "Hygiene & prevention", hi: "स्वच्छता और रोकथाम", kn: "ನೈರ್ಮಲ್ಯ ಮತ್ತು ತಡೆಗಟ್ಟುವಿಕೆ" }, icon: "🧼" },
-  { id: "mental", label: { en: "Mental wellbeing", hi: "मानसिक स्वास्थ्य", kn: "ಮಾನಸಿಕ ಆರೋಗ್ಯ" }, icon: "💚" },
+  { id: "maternal", label: { en: "Pregnancy & maternal health", hi: "गर्भावस्था और मातृ स्वास्थ्य", kn: "ಗರ್ಭಧಾರಣೆ ಮತ್ತು ತಾಯಿ ಆರೋಗ್ಯ" }, icon: "pregnancy" },
+  { id: "menstrual", label: { en: "Periods & menstrual health", hi: "मासिक धर्म स्वास्थ्य", kn: "ಮುಟ್ಟು ಮತ್ತು ಋತುಚಕ್ರ ಆರೋಗ್ಯ" }, icon: "drop" },
+  { id: "anaemia", label: { en: "Anaemia & nutrition", hi: "एनीमिया और पोषण", kn: "ರಕ್ತಹೀನತೆ ಮತ್ತು ಪೋಷಣೆ" }, icon: "nutrition" },
+  { id: "adolescent", label: { en: "Adolescent health", hi: "किशोर स्वास्थ्य", kn: "ಹದಿಹರೆಯದ ಆರೋಗ್ಯ" }, icon: "seedling" },
+  { id: "infection", label: { en: "Infections & fever", hi: "संक्रमण और बुखार", kn: "ಸೋಂಕು ಮತ್ತು ಜ್ವರ" }, icon: "thermometer" },
+  { id: "emergency", label: { en: "When to go to hospital immediately", hi: "तुरंत अस्पताल कब जाएं", kn: "ತಕ್ಷಣ ಆಸ್ಪತ್ರೆಗೆ ಯಾವಾಗ ಹೋಗಬೇಕು" }, icon: "alert" },
+  { id: "hygiene", label: { en: "Hygiene & prevention", hi: "स्वच्छता और रोकथाम", kn: "ನೈರ್ಮಲ್ಯ ಮತ್ತು ತಡೆಗಟ್ಟುವಿಕೆ" }, icon: "soap" },
+  { id: "mental", label: { en: "Mental wellbeing", hi: "मानसिक स्वास्थ्य", kn: "ಮಾನಸಿಕ ಆರೋಗ್ಯ" }, icon: "heart" },
 ];
 
 export const CORPUS = [

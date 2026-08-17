@@ -1,6 +1,13 @@
 import React from "react";
 import { Link } from "react-router-dom";
 import { useLanguage } from "../context/LanguageContext.jsx";
+import Icon from "./Icon.jsx";
+import { HELPLINES } from "../helplines.js";
+
+// The helplines that belong in a footer: the ones someone scrolled to the
+// bottom of a health site looking for. The full nineteen live on /helplines —
+// a footer column with nineteen numbers in it is a wall, not a directory.
+const FOOTER_HELPLINES = ["108", "102", "112", "181", "1098", "14416"];
 
 // Column footer in the public-service style: helplines first, then the services
 // again as text links, then the honest statement of what this is. Repeating the
@@ -8,6 +15,9 @@ import { useLanguage } from "../context/LanguageContext.jsx";
 // chance for someone who scrolled looking for something and did not find it.
 export default function Footer() {
   const { t } = useLanguage();
+  const lines = FOOTER_HELPLINES
+    .map((n) => HELPLINES.find((h) => h.number === n))
+    .filter(Boolean);
 
   return (
     <footer style={styles.footer}>
@@ -27,11 +37,21 @@ export default function Footer() {
           <div>
             <h3 style={styles.colTitle}>Emergency numbers</h3>
             <ul style={styles.list}>
-              <li><a href="tel:108" style={styles.link}>🚑 Ambulance — 108</a></li>
-              <li><a href="tel:102" style={styles.link}>🤰 Pregnancy transport — 102</a></li>
-              <li><a href="tel:112" style={styles.link}>☎️ Any emergency — 112</a></li>
-              <li><a href="tel:1091" style={styles.link}>👩 Women's helpline — 1091</a></li>
-              <li><a href="tel:1098" style={styles.link}>🧒 Child helpline — 1098</a></li>
+              {lines.map((h) => (
+                <li key={h.number}>
+                  <a href={`tel:${h.dial}`} style={styles.link}>
+                    <Icon name={h.icon} size={15} style={{ color: "var(--rose)" }} />
+                    <span>{h.label}</span>
+                    <span style={styles.num}>{h.number}</span>
+                  </a>
+                </li>
+              ))}
+              <li>
+                <Link to="/helplines" style={{ ...styles.link, color: "var(--rose-deep)", fontWeight: 700 }}>
+                  <Icon name="arrowRight" size={15} />
+                  <span>All {HELPLINES.length} national helplines</span>
+                </Link>
+              </li>
             </ul>
           </div>
 
@@ -44,6 +64,7 @@ export default function Footer() {
               <li><Link to="/anaemia" style={styles.link}>{t("nav_anaemia")}</Link></li>
               <li><Link to="/cycle" style={styles.link}>{t("nav_cycle")}</Link></li>
               <li><Link to="/prescription" style={styles.link}>{t("nav_prescription")}</Link></li>
+              <li><Link to="/report" style={styles.link}>{t("nav_report")}</Link></li>
             </ul>
           </div>
 
@@ -52,10 +73,17 @@ export default function Footer() {
             <ul style={styles.list}>
               <li><Link to="/impact" style={styles.link}>{t("nav_impact")}</Link></li>
               <li><Link to="/demo" style={styles.link}>{t("nav_demo")}</Link></li>
-              <li><Link to="/asha/login" style={styles.link}>🔒 Staff sign-in</Link></li>
+              <li>
+                <Link to="/asha/login" style={styles.link}>
+                  <Icon name="lock" size={14} />
+                  <span>Staff sign-in</span>
+                </Link>
+              </li>
             </ul>
             <p style={styles.sources}>
-              Health information is drawn from WHO and National Health Mission guidance.
+              Health information is drawn from WHO guidance and the National Health
+              Mission's operational guidelines. Every scheme named in a report cites the
+              ministry that runs it.
             </p>
           </div>
         </div>
@@ -96,7 +124,15 @@ const styles = {
     color: "var(--rose-deep)", marginBottom: 12,
   },
   list: { listStyle: "none", padding: 0, margin: 0, display: "grid", gap: 9 },
-  link: { fontSize: 13.5, color: "var(--ink-soft)", textDecoration: "none", fontWeight: 500 },
+  link: {
+    display: "flex", alignItems: "center", gap: 8,
+    fontSize: 13.5, color: "var(--ink-soft)", textDecoration: "none", fontWeight: 500,
+  },
+  num: {
+    marginInlineStart: "auto",
+    fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace",
+    fontSize: 12.5, fontWeight: 700, color: "var(--rose-deep)",
+  },
   sources: { fontSize: 12, color: "var(--ink-muted)", lineHeight: 1.6, marginTop: 14 },
   bottom: {
     borderTop: "1px solid var(--border)", marginTop: 30, paddingTop: 20, textAlign: "center",

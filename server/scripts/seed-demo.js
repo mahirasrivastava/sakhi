@@ -31,6 +31,8 @@ import {
   initAccounts,
   devProvisionDemoAccount,
   devListAccounts,
+  devReissueActivationCode,
+  devWriteCodesFile,
 } from "../security/accounts.js";
 import { validatePasswordPolicy } from "../security/passwords.js";
 
@@ -102,6 +104,36 @@ async function main() {
   if (process.argv.includes("--list")) {
     printTable(devListAccounts());
     console.log("\n  (--list is read-only; nothing was changed.)\n");
+    printCredentials();
+    return;
+  }
+
+  // --reissue: mint fresh one-time codes so the first-time-setup screen can be
+  // tested again. Without this the flow is exercisable exactly once per
+  // checkout, after which ACTIVATION-CODES.txt lists codes that are all spent
+  // and every attempt returns "already_active" with no way to tell that from a
+  // mistyped code.
+  if (process.argv.includes("--reissue")) {
+    const targets = process.argv.slice(2).filter((a) => !a.startsWith("--"));
+    const ids = targets.length ? targets : devListAccounts().map((a) => a.workerId);
+
+    console.log("\n  Sakhi — reissuing one-time activation codes");
+    console.log("  " + "=".repeat(88));
+    console.log("  These accounts are reset to pending_activation. Any password they had is");
+    console.log("  cleared, so they must go through First-time setup again.\n");
+
+    const issued = [];
+    for (const id of ids) {
+      const res = await devReissueActivationCode(id);
+      if (!res) { console.log(`  ✗ ${id.padEnd(15)} no such account`); continue; }
+      issued.push(res);
+      console.log(`  ✓ ${res.workerId.padEnd(15)} ${res.code}`);
+    }
+
+    if (issued.length) devWriteCodesFile(issued);
+    printTable(devListAccounts());
+    await warnIfServerRunning();
+    console.log("  ⚠  Development only. Never run this against a real deployment.\n");
     return;
   }
 
@@ -128,27 +160,65 @@ async function main() {
   }
 
   printTable(devListAccounts());
+  printCredentials();
+  await warnIfServerRunning();
+  console.log("  ⚠  Development only. Never run this against a real deployment.\n");
+}
 
-  console.log("\n  Sign in at http://localhost:5173/asha/login with:\n");
+/**
+ * The credentials block.
+ *
+ * Printed by BOTH --list and a seed run. It used to print only after a seed,
+ * which meant the one command someone runs when they are already locked out and
+ * confused — `npm run accounts:list` — showed a status table and no way to act
+ * on it.
+ */
+function printCredentials() {
+  const rows = devListAccounts();
+  const pending = rows.filter((r) => r.status === "pending_activation");
+  const seeded = new Set(DEMO_ACCOUNTS.map((a) => a.workerId));
+  const strangers = rows.filter((r) => r.status === "active" && !seeded.has(r.workerId));
+
+  console.log("  Sign in at http://localhost:5173/asha/login — 'Sign in' tab:\n");
   for (const acct of DEMO_ACCOUNTS) {
+    const row = rows.find((r) => r.workerId === acct.workerId);
+    const ready = row && row.status === "active" && row.hasPassword;
     console.log(`      Worker ID : ${acct.workerId}`);
     console.log(`      Password  : ${acct.password}`);
+    if (!ready) console.log("      (not seeded yet — run: npm run seed:demo)");
     console.log("");
   }
-  console.log("  Accounts not listed above are untouched — they still require their");
-  console.log("  one-time activation code, so the real First-time setup flow stays testable.");
-  console.log("  (ASHA-KA-0002 is still pending; its code is in data/ACTIVATION-CODES.txt.)\n");
 
-  // accounts.js loads the JSON file once at boot and serves from memory. A
-  // server that was already running will keep verifying against the OLD hash
-  // and the seed will look like it silently did nothing.
-  if (await serverIsRunning()) {
-    console.log("  ⚠  A server is already listening on :4000. It is still holding the");
-    console.log("     PREVIOUS passwords in memory — restart it before signing in:\n");
-    console.log("         (stop it with Ctrl-C, then)  npm run dev\n");
+  if (pending.length) {
+    console.log("  'First-time setup' tab — these still need their one-time code,");
+    console.log("  which is in server/data/ACTIVATION-CODES.txt:\n");
+    for (const r of pending) console.log(`      ${r.workerId}`);
+    console.log("");
   }
 
-  console.log("  ⚠  Development only. Never run this against a real deployment.\n");
+  // The case that actually bites: an account activated at some point with a
+  // password nobody recorded. Its code is spent, so the activation tab says
+  // "already active", and sign-in says "incorrect credentials". Both messages
+  // are true and neither is useful, so name the way out explicitly.
+  if (strangers.length) {
+    console.log("  Activated, but with a password this script did not set — the code is");
+    console.log("  spent, so 'First-time setup' will say already active. To reuse them:\n");
+    for (const r of strangers) console.log(`      ${r.workerId}`);
+    console.log("\n      npm run accounts:reissue          # fresh codes for every account");
+    console.log(`      npm run accounts:reissue ${strangers[0].workerId}   # or just one\n`);
+  }
+}
+
+// accounts.js loads the JSON file once at boot and serves from memory. A server
+// that was already running will keep verifying against the OLD hash, and the
+// seed will look like it silently did nothing.
+async function warnIfServerRunning() {
+  const port = process.env.PORT || 4000;
+  if (await serverIsRunning(port)) {
+    console.log(`  ⚠  A server is already listening on :${port}. It is still holding the`);
+    console.log("     PREVIOUS credentials in memory — restart it before signing in:\n");
+    console.log("         (stop it with Ctrl-C, then)  npm run dev\n");
+  }
 }
 
 // Best-effort check; any failure just means we skip the restart warning.

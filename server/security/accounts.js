@@ -372,10 +372,22 @@ const DUMMY_HASH =
  *
  * @returns {Promise<{ workerId: string, action: "created" | "reset" }>}
  */
-export async function devProvisionDemoAccount({ workerId, password, displayName, phc, role = "asha" }) {
+/**
+ * Shared guard for the dev-only helpers below.
+ *
+ * These functions mint credentials and clear lockout state, so the guard is a
+ * throw rather than a silent no-op — a dev helper that quietly does nothing in
+ * production is worse than one that fails loudly, because the caller carries on
+ * believing the account was provisioned.
+ */
+function assertDevOnly(name) {
   if (process.env.NODE_ENV === "production") {
-    throw new Error("devProvisionDemoAccount is disabled in production.");
+    throw new Error(`${name} is disabled in production.`);
   }
+}
+
+export async function devProvisionDemoAccount({ workerId, password, displayName, phc, role = "asha" }) {
+  assertDevOnly("devProvisionDemoAccount");
 
   const id = normalizeWorkerId(workerId);
   if (!id) throw new Error("A worker ID is required.");
@@ -422,6 +434,85 @@ export async function devProvisionDemoAccount({ workerId, password, displayName,
 }
 
 /** Snapshot of account state for the dev seed script's console output. No hashes. */
+/**
+ * DEV ONLY — mints a fresh one-time activation code for an existing account and
+ * returns it to the enclosing (fresh) account state.
+ *
+ * This exists because of a real dead end. Activation codes are one-shot by
+ * design: once used, the hash is discarded and the plaintext is gone. That is
+ * correct for production, but in development it means the first-time-setup flow
+ * can be exercised exactly once per checkout, after which the codes sitting in
+ * ACTIVATION-CODES.txt are stale — the file still lists them, nothing marks them
+ * spent, and every attempt returns "already_active". Someone re-testing that
+ * screen has no way to tell a wrong code from a used one.
+ *
+ * It resets the account to pending: the password hash is cleared along with the
+ * lockout state, so the account really is back to the state a new worker starts
+ * from rather than an active account wearing a pending label.
+ */
+export async function devReissueActivationCode(workerId) {
+  assertDevOnly("devReissueActivationCode");
+
+  const acct = findAccount(workerId);
+  if (!acct) return null;
+
+  const code = generateActivationCode();
+  acct.status = ACCOUNT_STATUS.PENDING;
+  acct.activationCodeHash = await hashPassword(code);
+  acct.activationCodeUsedAt = null;
+  acct.passwordHash = null;
+  acct.passwordUpdatedAt = null;
+  acct.failedAttempts = 0;
+  acct.lockoutCount = 0;
+  acct.lockedUntil = null;
+  persist();
+
+  return { workerId: acct.workerId, code };
+}
+
+/**
+ * DEV ONLY — rewrites ACTIVATION-CODES.txt after a reissue.
+ *
+ * Deliberately NOT `reportIssuedCodes`. That function writes only the codes it
+ * was handed, which is right at first boot (it is provisioning the whole roster)
+ * and wrong here: reissuing one account would drop every other pending account's
+ * line from the file, making a still-valid code look like it had been revoked.
+ *
+ * A plaintext code cannot be recovered from its hash, so an account issued
+ * earlier and not reissued now gets a line saying so rather than being silently
+ * omitted. An incomplete file that admits what it is missing is recoverable; one
+ * that looks complete is not.
+ */
+export function devWriteCodesFile(issued) {
+  assertDevOnly("devWriteCodesFile");
+
+  const fresh = new Map(issued.map((i) => [i.workerId, i.code]));
+  const lines = accounts
+    .filter((a) => a.status === ACCOUNT_STATUS.PENDING)
+    .map((a) => {
+      const code = fresh.get(a.workerId);
+      return code
+        ? `${a.workerId}\t${code}`
+        : `${a.workerId}\t(issued earlier — not recoverable; npm run accounts:reissue ${a.workerId})`;
+    });
+
+  const body =
+    "Sakhi — one-time ASHA activation codes\n" +
+    "Generated: " + new Date().toISOString() + "\n" +
+    "Hand these to each worker out-of-band, then delete this file.\n" +
+    "Each code works once and cannot be recovered after activation.\n" +
+    "Only accounts still awaiting activation are listed.\n\n" +
+    lines.join("\n") + "\n";
+
+  try {
+    writeSecure(CODES_FILE, body);
+  } catch (err) {
+    console.error("[accounts] Could not write activation codes file:", err.message);
+  }
+  console.log(`\n[accounts] Reissued ${issued.length} code(s); ${lines.length} account(s) pending.`);
+  console.log("[accounts] server/data/ACTIVATION-CODES.txt rewritten.\n");
+}
+
 export function devListAccounts() {
   if (process.env.NODE_ENV === "production") return [];
   return accounts.map((a) => ({

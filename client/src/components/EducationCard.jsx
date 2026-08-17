@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { useLanguage } from "../context/LanguageContext.jsx";
 import { speak, speechSynthesisSupported } from "../speech.js";
+import Icon from "./Icon.jsx";
 
 export default function EducationCard({ card }) {
   const { lang } = useLanguage();
@@ -18,10 +19,9 @@ export default function EducationCard({ card }) {
                 const text = [content.body, ...content.whatToDo].join(". ");
                 speak(text, lang);
               }}
-              className="btn btn-ghost"
-              style={{ padding: "4px 10px", fontSize: 12 }}
+              className="btn btn-ghost btn-icon"
               aria-label="Listen to this card"
-            >🔊</button>
+            ><Icon name="speaker" size={16} /></button>
           )}
           <button
             onClick={() => setExpanded((e) => !e)}
@@ -36,7 +36,7 @@ export default function EducationCard({ card }) {
           <p style={{ marginTop: 10, fontSize: 14.5, color: "var(--ink)", lineHeight: 1.7 }}>{content.body}</p>
 
           <div style={{ marginTop: 14 }}>
-            <p style={sectionHead}>✓ What to do</p>
+            <p style={sectionHead}><Icon name="check" size={14} /> What to do</p>
             <ul style={listStyle}>
               {content.whatToDo.map((item, i) => <li key={i}>{item}</li>)}
             </ul>
@@ -44,7 +44,7 @@ export default function EducationCard({ card }) {
 
           {content.doNot?.length > 0 && (
             <div style={{ marginTop: 12 }}>
-              <p style={{ ...sectionHead, color: "var(--emergency)" }}>✕ Do not</p>
+              <p style={{ ...sectionHead, color: "var(--emergency)" }}><Icon name="ban" size={14} /> Do not</p>
               <ul style={{ ...listStyle, color: "var(--emergency-ink)" }}>
                 {content.doNot.map((item, i) => <li key={i}>{item}</li>)}
               </ul>
@@ -57,8 +57,8 @@ export default function EducationCard({ card }) {
             </span>
             {card.sourceUrl && (
               <a href={card.sourceUrl} target="_blank" rel="noreferrer"
-                style={{ fontSize: 11.5, color: "var(--rose-deep)", fontWeight: 600 }}>
-                Read original →
+                className="link-inline" style={{ fontSize: 11.5 }}>
+                Read original <Icon name="arrowRight" size={12} />
               </a>
             )}
           </div>
