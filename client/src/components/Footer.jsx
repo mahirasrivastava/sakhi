@@ -63,7 +63,6 @@ export default function Footer() {
               <li><Link to="/nearby" style={styles.link}>{t("nav_nearby")}</Link></li>
               <li><Link to="/anaemia" style={styles.link}>{t("nav_anaemia")}</Link></li>
               <li><Link to="/cycle" style={styles.link}>{t("nav_cycle")}</Link></li>
-              <li><Link to="/prescription" style={styles.link}>{t("nav_prescription")}</Link></li>
               <li><Link to="/report" style={styles.link}>{t("nav_report")}</Link></li>
             </ul>
           </div>

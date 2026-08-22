@@ -60,7 +60,7 @@ export default function TriageForm({ symptomOptions, title, intro, showPregnant 
       });
       setSession(result);
       // Filed into the health report so it can be printed alongside the anaemia
-      // screen and the prescription reading, rather than being one more result
+      // screen, rather than being one more result
       // that vanishes when the tab closes.
       recordTriage({
         session: result,

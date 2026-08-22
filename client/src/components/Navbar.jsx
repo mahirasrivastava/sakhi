@@ -2,8 +2,10 @@ import React, { useEffect, useRef, useState } from "react";
 import { NavLink, useLocation } from "react-router-dom";
 import { useLanguage } from "../context/LanguageContext.jsx";
 import { useAuth } from "../context/AuthContext.jsx";
+import { useUser } from "../context/UserContext.jsx";
 import LanguagePicker from "./LanguagePicker.jsx";
 import ThemeToggle from "./ThemeToggle.jsx";
+import LiteToggle from "./LiteToggle.jsx";
 import Icon from "./Icon.jsx";
 
 // ---------------------------------------------------------------------------
@@ -20,7 +22,7 @@ import Icon from "./Icon.jsx";
 //
 //   Home
 //   Check symptoms   -> triage, general triage, health guide
-//   Screening        -> anaemia, prescription, cycle
+//   Screening        -> anaemia, cycle
 //   Find help        -> nearby facilities, helplines
 //   My report
 //
@@ -56,7 +58,6 @@ const NAV = [
     icon: "eye",
     children: [
       { to: "/anaemia", key: "nav_anaemia", icon: "eye", blurb: "Do you need a blood test?" },
-      { to: "/prescription", key: "nav_prescription", icon: "document", blurb: "Read and explain a prescription" },
       { to: "/cycle", key: "nav_cycle", icon: "calendar", blurb: "Track a cycle or a pregnancy" },
     ],
   },
@@ -76,6 +77,7 @@ const NAV = [
 export default function Navbar() {
   const { t } = useLanguage();
   const { isAuthenticated } = useAuth();
+  const { user, isSignedIn } = useUser();
   const [open, setOpen] = useState(false);
   const [menu, setMenu] = useState(null);
   const location = useLocation();
@@ -116,6 +118,12 @@ export default function Navbar() {
 
   return (
     <header className="site-header">
+      {/* Civic tricolour rule. Decorative only — see the note in index.css on
+          why no emblem or government wording appears anywhere in this shell. */}
+      <div className="tricolour-rule" aria-hidden="true">
+        <span /><span /><span />
+      </div>
+
       {/* Utility strip: the numbers someone in trouble needs before anything
           else, and the settings that change how the whole site reads. Trimmed
           to three — a row of numbers nobody can scan is not an emergency
@@ -137,16 +145,23 @@ export default function Navbar() {
           <div className="utility-right">
             <LanguagePicker />
             <ThemeToggle />
+            <LiteToggle />
           </div>
         </div>
       </div>
 
       <div className="container header-main">
-        <NavLink to="/" className="brand" onClick={() => setOpen(false)}>
-          <span className="brand-mark" aria-hidden="true">स</span>
-          <span>
-            <span className="brand-name">Sakhi</span>
-            <span className="brand-tag">Health help in your language</span>
+        <NavLink to="/" className="masthead" onClick={() => setOpen(false)}>
+          <span className="masthead-mark" aria-hidden="true">स</span>
+          <span className="masthead-text">
+            {/* Both scripts, the way every Indian public-service masthead is
+                set — so a reader who cannot read one can still read the other. */}
+            <span className="masthead-hi">सखी — आपकी भाषा में स्वास्थ्य सहायता</span>
+            <span className="masthead-en">Sakhi</span>
+            <span className="masthead-tag">Health triage &amp; screening</span>
+            <span className="masthead-independent">
+              An independent service — not a government app
+            </span>
           </span>
         </NavLink>
 
@@ -207,6 +222,11 @@ export default function Navbar() {
               </NavLink>
             )
           ))}
+
+          <NavLink to="/account" className="nav-link">
+            <Icon name="user" size={16} />
+            <span>{isSignedIn ? user.handle : t("nav_account")}</span>
+          </NavLink>
 
           {/* Visually separated from the patient-facing links — this is a
               restricted area, and it should not look like another service. */}

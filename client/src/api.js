@@ -4,10 +4,17 @@ const BASE = "/api";
 // it is never held in JS, so an XSS bug cannot read or exfiltrate it. What JS
 // *can* read is the CSRF cookie, and echoing it back in a header is what proves
 // the request came from our own page rather than an attacker's.
-function csrfToken() {
-  const match = document.cookie.match(/(?:^|;\s*)sakhi_csrf=([^;]*)/);
+function readCookie(name) {
+  const match = document.cookie.match(new RegExp(`(?:^|;\\s*)${name}=([^;]*)`));
   return match ? decodeURIComponent(match[1]) : null;
 }
+
+const csrfToken = () => readCookie("sakhi_csrf");
+
+// Patient accounts carry their own cookie pair and their own header, kept
+// separate from the staff one so a signed-in user can never be mistaken for a
+// signed-in worker. See server/security/patientAuth.js.
+const userCsrfToken = () => readCookie("sakhi_user_csrf");
 
 // Set by AuthContext so an expired session anywhere in the app bounces the
 // worker back to the sign-in screen instead of showing a dead page.
@@ -36,6 +43,8 @@ async function req(path, options = {}) {
   if (!["GET", "HEAD", "OPTIONS"].includes(method)) {
     const token = csrfToken();
     if (token) headers["X-CSRF-Token"] = token;
+    const userToken = userCsrfToken();
+    if (userToken) headers["X-User-CSRF-Token"] = userToken;
   }
 
   const res = await fetch(`${BASE}${path}`, {
@@ -46,7 +55,10 @@ async function req(path, options = {}) {
 
   if (!res.ok) {
     const body = await res.json().catch(() => ({}));
-    if (res.status === 401 && onUnauthorized) onUnauthorized(body.reason);
+    // A 401 on a patient route is an ordinary signed-out state, not an
+    // expired staff session, so it must not trigger the staff redirect.
+    const isUserRoute = path.startsWith("/user/");
+    if (res.status === 401 && !isUserRoute && onUnauthorized) onUnauthorized(body.reason);
     throw new ApiError(body.error || `Request failed (${res.status})`, {
       status: res.status,
       reason: body.reason,
@@ -68,24 +80,24 @@ export const api = {
   // with the weights that score them.
   anaemiaQuestions: () => req("/anaemia-screen/questions"),
   impact: () => req("/impact"),
-  analysePrescription: (payload) =>
-    req("/prescription/analyze", { method: "POST", body: JSON.stringify(payload) }),
-  prescriptionFamilyOptions: () => req("/prescription/family-history-options"),
-  // Which OCR engine the server can offer. Drives both the code path taken and
-  // what the user is told about where their photograph goes, so it is fetched
-  // before the file picker rather than after.
-  ocrStatus: () => req("/prescription/ocr/status"),
-  // Relays the image to the configured vision provider. The server holds the
-  // API key — a key in the client bundle is a key published — and forwards the
-  // image once without storing it.
-  prescriptionOcr: (payload) =>
-    req("/prescription/ocr", { method: "POST", body: JSON.stringify(payload) }),
   knowledgeCategories: (lang) => req(`/knowledge/categories?lang=${lang}`),
   knowledgeBrowse: (category, lang) => req(`/knowledge/browse?category=${category}&lang=${lang}`),
   knowledgeSearch: (q, lang, category) => {
     const params = new URLSearchParams({ q, lang });
     if (category) params.set("category", category);
     return req(`/knowledge/search?${params}`);
+  },
+
+  // --- optional patient accounts ---
+  // Every route above works without any of these. An account stores a username,
+  // a password hash and display preferences; health findings stay on the device.
+  user: {
+    register: (payload) => req("/user/register", { method: "POST", body: JSON.stringify(payload) }),
+    login: (payload) => req("/user/login", { method: "POST", body: JSON.stringify(payload) }),
+    logout: () => req("/user/logout", { method: "POST" }),
+    me: () => req("/user/me"),
+    setPreferences: (payload) =>
+      req("/user/preferences", { method: "PATCH", body: JSON.stringify(payload) }),
   },
 
   // --- ASHA authentication ---

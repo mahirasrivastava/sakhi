@@ -25,11 +25,20 @@ export default function Impact() {
         {stats ? (
           <>
             <p style={{ fontSize: 36, fontFamily: "Fraunces, serif", marginTop: 8 }}>{stats.totalSessions}</p>
-            <div style={{ display: "flex", gap: 16, marginTop: 10, flexWrap: "wrap" }}>
-              {Object.entries(stats.byLevel).map(([lvl, count]) => (
-                <span key={lvl} className={`pill pill-${lvl === "self-care" ? "selfcare" : lvl}`}>{lvl}: {count}</span>
-              ))}
-            </div>
+            {/* The urgency split is returned only to a signed-in worker. In a
+                single-sub-centre village the counts are small enough to be
+                matched to a person, so the public view stops at the total. */}
+            {stats.byLevel ? (
+              <div style={{ display: "flex", gap: 16, marginTop: 10, flexWrap: "wrap" }}>
+                {Object.entries(stats.byLevel).map(([lvl, count]) => (
+                  <span key={lvl} className={`pill pill-${lvl === "self-care" ? "selfcare" : lvl}`}>{lvl}: {count}</span>
+                ))}
+              </div>
+            ) : (
+              <p style={{ fontSize: 13, color: "var(--ink-muted)", marginTop: 10, lineHeight: 1.6 }}>
+                The breakdown by urgency is visible to signed-in ASHA workers only.
+              </p>
+            )}
           </>
         ) : (
           <p style={{ color: "var(--ink-muted)", marginTop: 10 }}>No sessions logged yet.</p>

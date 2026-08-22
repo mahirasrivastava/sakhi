@@ -40,7 +40,7 @@ export function cookieParser(req, res, next) {
   next();
 }
 
-function serializeCookie(name, value, opts = {}) {
+export function serializeCookie(name, value, opts = {}) {
   const parts = [`${name}=${encodeURIComponent(value)}`];
   if (opts.maxAge !== undefined) parts.push(`Max-Age=${Math.floor(opts.maxAge / 1000)}`);
   parts.push(`Path=${opts.path || "/"}`);
@@ -154,6 +154,60 @@ export function requireAuth(req, res, next) {
     // hopping addresses is exactly the shape of a stolen cookie, so it is logged.
     audit(AUDIT.SESSION_IP_CHANGED, { req, actor: account.workerId, outcome: "ok" });
   }
+
+  req.auth = { workerId: account.workerId, account, session: result.session, token };
+  next();
+}
+
+// ---------------------------------------------------------------------------
+// Input sanitization
+// ---------------------------------------------------------------------------
+
+// Matches an HTML tag specifically: `<` or `</` followed by a letter. Written
+// this narrowly on purpose. A blunt /<[^>]*>/ would eat "cramps < 2 days > a
+// week", and silently rewriting a girl's description of her own symptoms is a
+// clinical problem, not just a cosmetic one.
+const HTML_TAG = /<\/?[a-zA-Z][^>]*>/g;
+
+// Free text is the patient's own words, and long inputs cost LLM tokens and
+// database rows. 4000 characters is far beyond any real symptom description.
+const MAX_FREE_TEXT = 4000;
+
+/**
+ * Strips HTML tags from req.body.freeText.
+ *
+ * React escapes on render and the dashboard uses no dangerouslySetInnerHTML, so
+ * this is defence in depth rather than a fix for a live hole. It matters for
+ * the consumers that do not escape: a CSV export opened in a spreadsheet, a
+ * generated PDF, an alert relayed to a worker's phone. Sanitizing on the way in
+ * means every future reader inherits it.
+ */
+export function inputSanitizer(req, res, next) {
+  const value = req.body?.freeText;
+  if (typeof value === "string") {
+    req.body.freeText = value.replace(HTML_TAG, "").slice(0, MAX_FREE_TEXT).trim();
+  }
+  next();
+}
+
+/**
+ * Best-effort auth for routes that are public but say more to a signed-in
+ * worker. Sets req.auth when a valid session cookie is present and otherwise
+ * calls next() unchanged — an anonymous caller is an expected outcome here, not
+ * an error, so nothing is rejected, logged, or cleared.
+ *
+ * This must never be used to guard sensitive data. It is a "show more detail"
+ * signal only; requireAuth remains the boundary.
+ */
+export function optionalAuth(req, res, next) {
+  const token = req.cookies?.[SESSION_COOKIE];
+  if (!token) return next();
+
+  const result = touchSession(token, { ip: req.clientIp, userAgent: req.get("user-agent") });
+  if (!result.ok) return next();
+
+  const account = findAccount(result.session.workerId);
+  if (!account || account.status !== ACCOUNT_STATUS.ACTIVE) return next();
 
   req.auth = { workerId: account.workerId, account, session: result.session, token };
   next();

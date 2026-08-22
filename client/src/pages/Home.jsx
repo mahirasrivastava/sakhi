@@ -23,8 +23,6 @@ const SERVICES = [
     desc: "The same urgency check, for anyone — any age, any symptom." },
   { to: "/cycle", icon: "calendar", key: "nav_cycle",
     desc: "Track your period or pregnancy week by week. Danger signs checked automatically." },
-  { to: "/prescription", icon: "document", key: "nav_prescription",
-    desc: "Photograph a prescription to understand what each medicine is for." },
   { to: "/report", icon: "report", key: "nav_report",
     desc: "Turn everything you have done here into one printable record for a doctor." },
   { to: "/impact", icon: "chart", key: "nav_impact",

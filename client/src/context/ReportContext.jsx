@@ -4,7 +4,7 @@ import React, { createContext, useCallback, useContext, useEffect, useMemo, useS
  * The health report store.
  *
  * Sakhi has five tools that each produce a real finding — a triage level, a
- * pallor verdict, a prescription reading, a cycle log, a location code — and
+ * pallor verdict, a cycle log, a location code — and
  * until now every one of them ended at a card that disappeared when the tab
  * closed. That is the wrong end state for this user. A woman who walks to a PHC
  * gets four minutes with a clinician, and "an app said I should get a blood
@@ -34,7 +34,6 @@ const EMPTY = {
   startedAt: null,
   triage: null,
   anaemia: null,
-  prescription: null,
   cycle: null,
   location: null,
 };
@@ -105,7 +104,6 @@ export function ReportProvider({ children }) {
 
   const recordTriage = useCallback((v) => put("triage", v), [put]);
   const recordAnaemia = useCallback((v) => put("anaemia", v), [put]);
-  const recordPrescription = useCallback((v) => put("prescription", v), [put]);
   const recordCycle = useCallback((v) => put("cycle", v), [put]);
   const recordLocation = useCallback((v) => put("location", v), [put]);
 
@@ -115,7 +113,7 @@ export function ReportProvider({ children }) {
   }, []);
 
   const sections = useMemo(
-    () => ["triage", "anaemia", "prescription", "cycle", "location"].filter((k) => report[k]),
+    () => ["triage", "anaemia", "cycle", "location"].filter((k) => report[k]),
     [report]
   );
 
@@ -125,11 +123,10 @@ export function ReportProvider({ children }) {
     hasContent: sections.length > 0,
     recordTriage,
     recordAnaemia,
-    recordPrescription,
     recordCycle,
     recordLocation,
     clearReport,
-  }), [report, sections, recordTriage, recordAnaemia, recordPrescription, recordCycle, recordLocation, clearReport]);
+  }), [report, sections, recordTriage, recordAnaemia, recordCycle, recordLocation, clearReport]);
 
   return <ReportContext.Provider value={value}>{children}</ReportContext.Provider>;
 }

@@ -45,3 +45,7 @@ services:
         value: "true"              # Required behind Render's proxy — see DEPLOYMENT.md, this one is a trap.
       - key: ALLOWED_ORIGINS
         sync: false                # Set to your Vercel URL in the dashboard.
+      - key: SUPABASE_URL
+        sync: false                # Without this the queue lives on Render's ephemeral disk and is lost on restart.
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false                # Secret. Set in the dashboard only — never commit it.

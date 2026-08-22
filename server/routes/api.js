@@ -7,7 +7,9 @@ import {
   analyzePallor, SYMPTOM_OPTIONS as ANAEMIA_SYMPTOMS, RISK_OPTIONS as ANAEMIA_RISKS,
 } from "./anaemia.js";
 import { retrieveEducation, getCorpusSize } from "../vectorStore.js";
-import { requireAuth, requireCsrf, noStore } from "../security/middleware.js";
+import {
+  requireAuth, requireCsrf, noStore, optionalAuth, inputSanitizer,
+} from "../security/middleware.js";
 import { verifyAccountPassword } from "../security/accounts.js";
 import { audit, AUDIT } from "../security/audit.js";
 
@@ -20,7 +22,7 @@ const router = Router();
 // ---------------------------------------------------------------------------
 
 // POST /api/triage — run a full intake -> triage -> routing session
-router.post("/triage", async (req, res) => {
+router.post("/triage", inputSanitizer, async (req, res) => {
   try {
     const session = await runSession(req.body || {});
     res.json(session);
@@ -31,7 +33,7 @@ router.post("/triage", async (req, res) => {
 });
 
 // POST /api/navigate — Sakhi Navigator: triage + education cards from trusted sources
-router.post("/navigate", async (req, res) => {
+router.post("/navigate", inputSanitizer, async (req, res) => {
   try {
     const session = await runSession(req.body || {});
     const educationCards = retrieveEducation(
@@ -48,74 +50,69 @@ router.post("/navigate", async (req, res) => {
 
 // POST /api/anaemia-screen — conjunctival pallor screen.
 //
-// Accepts a burst of frames plus a wide reference sample used for white
-// balance. The single-array `pixels` form from the older client still works.
-// No image is stored: pixels are scored in-process and discarded.
-const MAX_FRAMES = 8;
-const MAX_PIXELS_PER_FRAME = 12000;
-const MAX_REFERENCE_PIXELS = 4000;
+// Takes a flat array of sampled {r,g,b} pixels. No image is stored, and none is
+// ever received: the client crops and samples on the device, so what arrives is
+// aggregate colour data that cannot be reassembled into a photograph of anyone.
+const MIN_SAMPLE_PIXELS = 30;
+const MAX_SAMPLE_PIXELS = 5000;
 
-// Pixel arrays arrive from a canvas, so entries are trusted only after being
-// coerced into finite 0-255 numbers — a crafted payload must not reach the
-// maths as NaN or a huge value.
-function sanitizePixels(raw, limit) {
-  if (!Array.isArray(raw)) return [];
-  const out = [];
-  for (const p of raw.slice(0, limit)) {
-    if (!p || typeof p !== "object") continue;
-    const r = Number(p.r), g = Number(p.g), b = Number(p.b);
-    if (!Number.isFinite(r) || !Number.isFinite(g) || !Number.isFinite(b)) continue;
-    out.push({
-      r: Math.max(0, Math.min(255, r)),
-      g: Math.max(0, Math.min(255, g)),
-      b: Math.max(0, Math.min(255, b)),
-    });
+// Pixels arrive from a canvas, so they are trusted only after being checked
+// into range. A crafted payload must not reach the arithmetic as NaN, as a
+// negative, or as a value that would skew a mean past what a sensor can emit.
+function validatePixels(raw) {
+  if (!Array.isArray(raw)) {
+    return { ok: false, error: "Expected `pixels` to be an array of {r, g, b} samples." };
   }
-  return out;
+  if (raw.length < MIN_SAMPLE_PIXELS) {
+    return {
+      ok: false,
+      error: `Not enough pixel data — got ${raw.length}, need at least ${MIN_SAMPLE_PIXELS}. Move closer and try again.`,
+    };
+  }
+  if (raw.length > MAX_SAMPLE_PIXELS) {
+    return {
+      ok: false,
+      error: `Too much pixel data — got ${raw.length}, the maximum is ${MAX_SAMPLE_PIXELS}.`,
+    };
+  }
+
+  const pixels = new Array(raw.length);
+  for (let i = 0; i < raw.length; i++) {
+    const p = raw[i];
+    if (!p || typeof p !== "object") {
+      return { ok: false, error: `Pixel ${i} is not an object with r, g and b.` };
+    }
+    const { r, g, b } = p;
+    if (typeof r !== "number" || typeof g !== "number" || typeof b !== "number") {
+      return { ok: false, error: `Pixel ${i} must have numeric r, g and b values.` };
+    }
+    if (!Number.isFinite(r) || !Number.isFinite(g) || !Number.isFinite(b)) {
+      return { ok: false, error: `Pixel ${i} has a non-finite channel value.` };
+    }
+    if (r < 0 || r > 255 || g < 0 || g > 255 || b < 0 || b > 255) {
+      return { ok: false, error: `Pixel ${i} has a channel outside 0-255.` };
+    }
+    pixels[i] = { r, g, b };
+  }
+
+  return { ok: true, pixels };
 }
 
 router.post("/anaemia-screen", (req, res) => {
   try {
-    const body = req.body || {};
-
-    const rawFrames = Array.isArray(body.frames) && body.frames.length
-      ? body.frames.slice(0, MAX_FRAMES)
-      : [body.pixels];
-
-    const frames = rawFrames
-      .map((f) => sanitizePixels(f, MAX_PIXELS_PER_FRAME))
-      .filter((f) => f.length > 0);
-
-    if (frames.length === 0) {
-      return res.status(400).json({ error: "No pixel data received." });
+    const validation = validatePixels(req.body?.pixels);
+    if (!validation.ok) {
+      return res.status(400).json({ error: validation.error });
     }
 
-    const focusScore = Number.isFinite(Number(body.focusScore))
-      ? Number(body.focusScore)
-      : undefined;
-
-    // The checklist answers. Filtered against the server's own option lists so
-    // an arbitrary string in the payload cannot reach the scoring tables.
-    const validSymptoms = new Set(ANAEMIA_SYMPTOMS.map((o) => o.id));
-    const validRisks = new Set(ANAEMIA_RISKS.map((o) => o.id));
-    const symptoms = Array.isArray(body.symptoms)
-      ? body.symptoms.filter((s) => validSymptoms.has(s))
-      : [];
-    const risks = Array.isArray(body.risks)
-      ? body.risks.filter((r) => validRisks.has(r))
-      : [];
-
-    const result = analyzePallor({
-      frames,
-      reference: sanitizePixels(body.reference, MAX_REFERENCE_PIXELS),
-      focusScore,
-      symptoms,
-      risks,
-    });
+    const result = analyzePallor(validation.pixels);
 
     // A capture that failed the quality gate is a client-correctable problem,
     // not a server error — 422 so the UI can tell them what to fix.
-    if (!result.ok) return res.status(422).json(result);
+    if (result.rejected) {
+      return res.status(422).json(result);
+    }
+
     res.json(result);
   } catch (err) {
     console.error("[anaemia]", err?.message);
@@ -130,9 +127,23 @@ router.get("/anaemia-screen/questions", (req, res) => {
 });
 
 // GET /api/impact — aggregate counts only, no per-person data. Stays public so
-// the Impact page works for anyone.
-router.get("/impact", (req, res) => {
-  res.json(getImpactStats());
+// the Impact page works for anyone, but what it shows depends on who is asking.
+//
+// The total is a reach number and is safe to publish. The per-level breakdown
+// is not: in a village served by one sub-centre, "3 emergencies this week" is a
+// small enough number to be matched against who was seen going to the clinic.
+// Aggregates stop protecting anyone once the denominator is a hamlet, so the
+// breakdown is shown only to a signed-in worker, who can see the underlying
+// records anyway.
+router.get("/impact", optionalAuth, async (req, res) => {
+  try {
+    const stats = await getImpactStats();
+    if (!req.auth) return res.json({ totalSessions: stats.totalSessions });
+    res.json(stats);
+  } catch (err) {
+    console.error("[impact]", err?.message);
+    res.status(500).json({ error: "Could not load impact statistics." });
+  }
 });
 
 // ---------------------------------------------------------------------------
@@ -144,22 +155,41 @@ router.get("/impact", (req, res) => {
 router.use("/sessions", noStore, requireAuth, requireCsrf);
 
 // GET /api/sessions — the ASHA/clinician triage queue, redacted.
-router.get("/sessions", (req, res) => {
+router.get("/sessions", async (req, res) => {
   const { level, ashaAlert } = req.query;
-  const rows = getSessions({ level, ashaAlert }).map(redactForList);
-  audit(AUDIT.LIST_SESSIONS, {
-    req,
-    actor: req.auth.workerId,
-    outcome: "ok",
-    meta: { count: rows.length, filters: { level: level || null, ashaAlert: ashaAlert ?? null } },
-  });
-  res.json(rows);
+  try {
+    const rows = (await getSessions({ level, ashaAlert })).map(redactForList);
+    audit(AUDIT.LIST_SESSIONS, {
+      req,
+      actor: req.auth.workerId,
+      outcome: "ok",
+      meta: { count: rows.length, filters: { level: level || null, ashaAlert: ashaAlert ?? null } },
+    });
+    res.json(rows);
+  } catch (err) {
+    // Audited as an error rather than swallowed: a worker who cannot see the
+    // queue needs to know the queue is broken, not assume it is empty.
+    audit(AUDIT.LIST_SESSIONS, {
+      req, actor: req.auth.workerId, outcome: "error", reason: "store_unavailable",
+    });
+    console.error("[sessions]", err?.message);
+    res.status(503).json({ error: "The queue is unavailable right now. Please retry." });
+  }
 });
 
 // GET /api/sessions/:id — the full record, including the patient's own words.
 // This is the narrow, audited door to sensitive content.
-router.get("/sessions/:id", (req, res) => {
-  const session = getSessionById(req.params.id);
+router.get("/sessions/:id", async (req, res) => {
+  let session;
+  try {
+    session = await getSessionById(req.params.id);
+  } catch (err) {
+    audit(AUDIT.READ_SESSION, {
+      req, actor: req.auth.workerId, targetId: req.params.id, outcome: "error", reason: "store_unavailable",
+    });
+    console.error("[session]", err?.message);
+    return res.status(503).json({ error: "That record is unavailable right now. Please retry." });
+  }
   if (!session) {
     audit(AUDIT.READ_SESSION, {
       req, actor: req.auth.workerId, targetId: req.params.id, outcome: "denied", reason: "not_found",
@@ -187,7 +217,16 @@ router.delete("/sessions/:id", async (req, res) => {
     return res.status(401).json({ error: "Password confirmation failed.", reason: "reauth_failed" });
   }
 
-  const deleted = deleteSession(req.params.id);
+  let deleted;
+  try {
+    deleted = await deleteSession(req.params.id);
+  } catch (err) {
+    audit(AUDIT.DELETE_SESSION, {
+      req, actor: req.auth.workerId, targetId: req.params.id, outcome: "error", reason: "store_unavailable",
+    });
+    console.error("[delete]", err?.message);
+    return res.status(503).json({ error: "Could not delete that record right now. Please retry." });
+  }
   if (!deleted) {
     audit(AUDIT.DELETE_SESSION, {
       req, actor: req.auth.workerId, targetId: req.params.id, outcome: "denied", reason: "not_found",

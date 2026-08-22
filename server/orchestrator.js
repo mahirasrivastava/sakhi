@@ -28,6 +28,6 @@ export async function runSession(rawInput) {
     selfCare,
   };
 
-  addSession(session);
+  await addSession(session);
   return session;
 }

@@ -4,7 +4,7 @@ import morgan from "morgan";
 import apiRouter from "./routes/api.js";
 import knowledgeRouter from "./routes/knowledge.js";
 import authRouter from "./routes/auth.js";
-import prescriptionRouter from "./routes/prescriptions.js";
+import userAuthRouter from "./routes/userAuth.js";
 import { isConfigured } from "./agents/llmReasoner.js";
 import { initAccounts } from "./security/accounts.js";
 import { cookieParser, clientIp, securityHeaders } from "./security/middleware.js";
@@ -36,21 +36,13 @@ app.use(cors({
     return callback(new Error("Origin not allowed"));
   },
   credentials: true,           // required for the session cookie
-  methods: ["GET", "POST", "DELETE", "OPTIONS"],
-  allowedHeaders: ["Content-Type", "X-CSRF-Token"],
+  methods: ["GET", "POST", "PATCH", "DELETE", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "X-CSRF-Token", "X-User-CSRF-Token"],
   maxAge: 600,
 }));
 
-// The prescription OCR relay carries a base64 image, which base64 inflates by
-// 4/3. The client downscales before uploading, so a normal photo arrives at a
-// few hundred KB — this ceiling is headroom for a large scan, not the expected
-// size. It is scoped to the one route that needs it rather than raised globally,
-// because a 9 MB limit on every endpoint is 9 MB an unauthenticated caller can
-// make the server parse.
-app.use("/api/prescription/ocr", express.json({ limit: "9mb" }));
-
-// 2 MB is needed for the anaemia pixel payload; auth routes bound their own
-// fields far more tightly.
+// 2 MB covers the anaemia pixel payload; auth routes bound their own fields
+// far more tightly.
 app.use(express.json({ limit: "2mb" }));
 app.use(cookieParser);
 
@@ -63,9 +55,9 @@ app.get("/api/health", (req, res) => {
 });
 
 app.use("/api/auth", authRouter);
+app.use("/api/user", userAuthRouter);
 app.use("/api", apiRouter);
 app.use("/api/knowledge", knowledgeRouter);
-app.use("/api/prescription", prescriptionRouter);
 
 app.use((req, res) => res.status(404).json({ error: "Not found" }));
 
@@ -77,15 +69,10 @@ app.use((err, req, res, next) => {
   }
 
   // body-parser rejects an oversize body before any route runs, so the route's
-  // own size check never sees it and the client got a bare 500. A photo that is
-  // too large is a fixable user-facing condition, not a server fault — and on
-  // the prescription route the client needs the `fallback` hint to know it can
-  // still read the image on-device.
+  // own size check never sees it and the client got a bare 500. A payload that
+  // is too large is a fixable user-facing condition, not a server fault.
   if (err?.type === "entity.too.large") {
-    return res.status(413).json({
-      error: "That file is too large to send. Please retake the photo.",
-      fallback: "tesseract",
-    });
+    return res.status(413).json({ error: "That request was too large. Please try again." });
   }
   if (err?.type === "entity.parse.failed") {
     return res.status(400).json({ error: "The request body was not valid JSON." });
