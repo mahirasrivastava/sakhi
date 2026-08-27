@@ -2,6 +2,7 @@ import React from "react";
 import { Link } from "react-router-dom";
 import { useLanguage } from "../context/LanguageContext.jsx";
 import Icon from "./../components/Icon.jsx";
+import JourneyChecklist from "../components/JourneyChecklist.jsx";
 import { callsFor } from "../helplines.js";
 
 // The full service list, as a grid of large tiles. This is the pattern the
@@ -10,19 +11,23 @@ import { callsFor } from "../helplines.js";
 // description, and nobody has to guess what lives behind a menu.
 const SERVICES = [
   { to: "/triage", icon: "triage", key: "nav_triage",
-    desc: "Answer a few questions and find out how urgent it is. Takes two minutes.", primary: true },
+    desc: "Answer a few questions and find out how urgent it is. Takes two minutes." },
   { to: "/nearby", icon: "pin", key: "nav_nearby",
     desc: "Call an ambulance and get a location code you can read out on the phone.", urgent: true },
   { to: "/helplines", icon: "phone", key: "nav_helplines",
     desc: "Every national helpline — ambulance, women, children, mental health — in one list.", urgent: true },
   { to: "/anaemia", icon: "eye", key: "nav_anaemia",
     desc: "Point the camera at your lower eyelid for a straight yes or no on a blood test." },
+  { to: "/prescription", icon: "report", title: "Read a prescription",
+    desc: "Photograph a paper prescription and have it read back to you. Always confirm with your chemist." },
   { to: "/sakhi", icon: "compass", key: "nav_sakhi",
     desc: "Read trusted health information by topic. Every card cites WHO or NHM." },
   { to: "/general", icon: "stethoscope", key: "nav_general",
     desc: "The same urgency check, for anyone — any age, any symptom." },
-  { to: "/cycle", icon: "calendar", key: "nav_cycle",
-    desc: "Track your period or pregnancy week by week. Danger signs checked automatically." },
+  { to: "/cycle", icon: "calendar", title: "Cycle tracker",
+    desc: "Log your period date by date and see if your cycle is regular, on a simple graph." },
+  { to: "/pregnancy", icon: "pregnancy", title: "Pregnancy tracker",
+    desc: "Your week, trimester and due date from your last period. Danger signs checked." },
   { to: "/report", icon: "report", key: "nav_report",
     desc: "Turn everything you have done here into one printable record for a doctor." },
   { to: "/impact", icon: "chart", key: "nav_impact",
@@ -134,7 +139,7 @@ export default function Home() {
               <span className="tile-mark">
                 <Icon name={s.icon} size={24} />
               </span>
-              <span className="tile-title">{t(s.key)}</span>
+              <span className="tile-title">{s.title || t(s.key)}</span>
               <span className="tile-desc">{s.desc}</span>
               <span className="tile-go">
                 Open <Icon name="arrowRight" size={14} />
@@ -143,6 +148,8 @@ export default function Home() {
           ))}
         </div>
       </section>
+
+      <JourneyChecklist />
 
       {/* Plain-language statement of what this is and is not. On a health tool
           used by people who may not have seen one before, saying this outright

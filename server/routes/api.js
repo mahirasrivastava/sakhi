@@ -7,6 +7,7 @@ import {
   analyzePallor, SYMPTOM_OPTIONS as ANAEMIA_SYMPTOMS, RISK_OPTIONS as ANAEMIA_RISKS,
 } from "./anaemia.js";
 import { retrieveEducation, getCorpusSize } from "../vectorStore.js";
+import { visionText, isVisionConfigured, activeVisionProvider, chatJSON, isLlmConfigured, activeTextProvider } from "../agents/llmProvider.js";
 import {
   requireAuth, requireCsrf, noStore, optionalAuth, inputSanitizer,
 } from "../security/middleware.js";
@@ -151,6 +152,107 @@ router.get("/impact", optionalAuth, async (req, res) => {
 // belonging to (often underage) patients. Authenticated ASHA workers only, and
 // every access is written to the audit trail.
 // ---------------------------------------------------------------------------
+
+
+// POST /api/prescription/read — read a photographed prescription with a FREE
+// vision model (Gemini/Groq). Deliberately NOT plain OCR: doctor handwriting
+// defeats Tesseract, and a wrong drug name is dangerous. A vision LLM reads it,
+// marks its own confidence, and the RESULT IS NEVER AUTO-TRUSTED — the client
+// forces the patient to confirm every line against the doctor/pharmacist.
+//
+// Privacy: the photo is analysed in-request and never stored. It does leave the
+// device (unlike the anaemia pixels), so the client says so before uploading.
+router.post("/prescription/read", inputSanitizer, async (req, res) => {
+  if (!isVisionConfigured()) {
+    return res.status(503).json({
+      error: "Prescription reading is not enabled. Set GEMINI_API_KEY (free) in the server .env to turn it on.",
+      reason: "no_vision_provider",
+    });
+  }
+
+  const imageBase64 = String(req.body?.imageBase64 || "").replace(/^data:[^,]+,/, "");
+  const mimeType = String(req.body?.mimeType || "image/jpeg");
+  if (!imageBase64 || imageBase64.length < 100) {
+    return res.status(400).json({ error: "No image received. Please take or choose a clearer photo." });
+  }
+  if (imageBase64.length > 2_400_000) {
+    return res.status(413).json({ error: "That photo is too large. The app should shrink it first — try again." });
+  }
+
+  const prompt = [
+    "You are transcribing a photographed medical prescription for a patient in rural India.",
+    "Transcribe ONLY what is actually written. Do NOT guess or complete a medicine name you cannot read.",
+    "Return STRICT JSON only, no prose, in exactly this shape:",
+    '{"legibleText":"<best transcription of all visible text>",',
+    ' "items":[{"medicine":"<name as written>","strength":"<e.g. 500mg, or empty>","frequency":"<e.g. 1-0-1, or empty>","duration":"<e.g. 5 days, or empty>","confidence":"high|medium|low"}],',
+    ' "unreadable": <true if large parts are illegible>,',
+    ' "notes":"<anything the patient should double-check>"}',
+    "Mark any item you are unsure about as \"low\". Leave a field \"\" if you cannot read it. NEVER invent a dosage.",
+  ].join("\n");
+
+  try {
+    const raw = await visionText({ prompt, imageBase64, mimeType, maxTokens: 800 });
+    let parsed;
+    try {
+      const a = raw.indexOf("{"), b = raw.lastIndexOf("}");
+      parsed = JSON.parse(raw.slice(a, b + 1));
+    } catch {
+      // Model didn't return clean JSON — hand back the raw text so nothing is lost.
+      parsed = { legibleText: raw, items: [], unreadable: true, notes: "" };
+    }
+    res.json({
+      ok: true,
+      source: activeVisionProvider(),
+      legibleText: parsed.legibleText || "",
+      items: Array.isArray(parsed.items) ? parsed.items.slice(0, 20) : [],
+      unreadable: Boolean(parsed.unreadable),
+      notes: parsed.notes || "",
+      // The client must show this. The reading is an aid, never an instruction.
+      disclaimer: "This is a best-effort AI reading and can be wrong. Confirm every medicine, strength and dose with your doctor or pharmacist before taking anything.",
+    });
+  } catch (err) {
+    console.error("[prescription]", err?.message);
+    res.status(502).json({ error: "Could not read the prescription right now. Please try again, or ask your pharmacist." });
+  }
+});
+
+
+// POST /api/report/summarize — turn the collected self-check into a short,
+// plain-language summary + next steps, written by the FREE LLM. It NEVER
+// diagnoses and NEVER names a medicine; it is guidance to take to a health
+// worker, printed alongside the raw findings. Free, optional, rules still stand.
+router.post("/report/summarize", inputSanitizer, async (req, res) => {
+  if (!isLlmConfigured()) {
+    return res.status(503).json({
+      error: "AI summary isn't enabled. Set GROQ_API_KEY or GEMINI_API_KEY (free) in the server .env.",
+      reason: "no_llm_provider",
+    });
+  }
+  const context = String(req.body?.context || "").slice(0, 4000);
+  if (!context.trim()) return res.status(400).json({ error: "Nothing to summarize yet." });
+
+  const system = [
+    "You write a SHORT, plain-language summary of a health self-check for a woman in rural India to hand to an ASHA worker or doctor.",
+    "Use very simple words a non-native English reader understands. Be warm and calm.",
+    "You must NOT diagnose a disease. You must NOT name or suggest any medicine or treatment.",
+    "If anything looks urgent, gently say to see a health worker soon.",
+    'Respond with STRICT JSON only: {"summary":"2 to 3 short sentences","nextSteps":["short step","short step","short step"]}',
+  ].join(" ");
+
+  try {
+    const parsed = await chatJSON({ system, user: `Self-check findings:\n${context}`, maxTokens: 320 });
+    res.json({
+      ok: true,
+      source: activeTextProvider(),
+      summary: String(parsed.summary || "").slice(0, 700),
+      nextSteps: Array.isArray(parsed.nextSteps) ? parsed.nextSteps.slice(0, 6).map((x) => String(x).slice(0, 160)) : [],
+      disclaimer: "This summary is written by AI to help you talk to a health worker. It is not a diagnosis.",
+    });
+  } catch (err) {
+    console.error("[report-summary]", err?.message);
+    res.status(502).json({ error: "Could not write the summary right now. Please try again." });
+  }
+});
 
 router.use("/sessions", noStore, requireAuth, requireCsrf);
 

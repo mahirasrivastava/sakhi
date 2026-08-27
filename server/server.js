@@ -7,6 +7,7 @@ import authRouter from "./routes/auth.js";
 import userAuthRouter from "./routes/userAuth.js";
 import { isConfigured } from "./agents/llmReasoner.js";
 import { initAccounts } from "./security/accounts.js";
+import { initPatientAccounts, accountsBackend } from "./security/patientAuth.js";
 import { cookieParser, clientIp, securityHeaders } from "./security/middleware.js";
 import { sessionStats } from "./security/authSessions.js";
 
@@ -82,11 +83,12 @@ app.use((err, req, res, next) => {
   res.status(500).json({ error: "Something went wrong." });
 });
 
-initAccounts()
+Promise.all([initAccounts(), initPatientAccounts()])
   .then(() => {
     app.listen(PORT, () => {
       console.log(`Sakhi server running on http://localhost:${PORT}`);
-      console.log(`watsonx.ai Granite configured: ${isConfigured()}`);
+      console.log(`AI provider configured: ${isConfigured()}`);
+      console.log(`Patient accounts backend: ${accountsBackend}`);
       console.log(`Dashboard API is authenticated. Allowed origins: ${ALLOWED_ORIGINS.join(", ")}`);
     });
   })

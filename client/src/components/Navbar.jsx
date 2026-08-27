@@ -5,7 +5,6 @@ import { useAuth } from "../context/AuthContext.jsx";
 import { useUser } from "../context/UserContext.jsx";
 import LanguagePicker from "./LanguagePicker.jsx";
 import ThemeToggle from "./ThemeToggle.jsx";
-import LiteToggle from "./LiteToggle.jsx";
 import Icon from "./Icon.jsx";
 
 // ---------------------------------------------------------------------------
@@ -58,7 +57,8 @@ const NAV = [
     icon: "eye",
     children: [
       { to: "/anaemia", key: "nav_anaemia", icon: "eye", blurb: "Do you need a blood test?" },
-      { to: "/cycle", key: "nav_cycle", icon: "calendar", blurb: "Track a cycle or a pregnancy" },
+      { to: "/cycle", key: "nav_cycle", icon: "calendar", blurb: "Track your period, date by date" },
+      { to: "/pregnancy", key: "nav_pregnancy", icon: "pregnancy", blurb: "Week, trimester and due date" },
     ],
   },
   {
@@ -145,7 +145,6 @@ export default function Navbar() {
           <div className="utility-right">
             <LanguagePicker />
             <ThemeToggle />
-            <LiteToggle />
           </div>
         </div>
       </div>

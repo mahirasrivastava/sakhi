@@ -1,9 +1,19 @@
 // vectorStore.js
-// Lightweight TF-IDF cosine similarity search over the curated health corpus.
-// No external vector DB or embeddings API needed — this is a closed, curated
-// corpus where every entry is reviewed, so we don't need semantic search over
-// millions of documents; we need reliable, fast retrieval over ~50 vetted cards.
-// Swap for a real vector DB later without changing the API shape.
+// BM25 retrieval over the curated health-education corpus, with a tag-aware
+// re-rank.  (Point 8)
+//
+// This replaces the earlier TF-IDF cosine scorer. BM25 is the better default
+// for short keyword-ish queries against short documents: its term-frequency
+// saturation (k1) stops a card that merely repeats a word from beating a card
+// that is genuinely on-topic, and its length normalisation (b) stops longer
+// cards from winning on sheer word count. Both were real failure modes of plain
+// TF-IDF cosine here.
+//
+// Deliberately still NO external vector DB or embeddings service. This is a
+// closed, curated corpus of vetted cards — every entry is reviewed — so the win
+// from a heavy semantic stack (ChromaDB + a reranker microservice) does not pay
+// for the deployment complexity it adds. The API shape is unchanged, so this
+// can still be swapped later without touching callers.
 
 import fs from "fs";
 import path from "path";
@@ -12,92 +22,106 @@ import { fileURLToPath } from "url";
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const CORPUS_PATH = path.join(__dirname, "corpus", "health-education.json");
 
+// BM25 parameters. k1 controls term-frequency saturation; b controls how much
+// document length is penalised. These are the standard, robust defaults.
+const K1 = 1.5;
+const B = 0.75;
+const TAG_WEIGHT = 3; // tags are the curated retrieval keys, counted this many times
+
 let corpus = [];
-let idfCache = {};
-let tfidfVectors = [];
+let docTokens = [];   // token array per doc (tags repeated TAG_WEIGHT times)
+let docLen = [];      // |d| per doc
+let avgdl = 0;
+let df = {};          // document frequency per term
+let N = 0;
 
 function tokenize(text) {
-  return text.toLowerCase().replace(/[^a-z0-9_\s]/g, "").split(/\s+/).filter(Boolean);
+  return String(text || "").toLowerCase().replace(/[^a-z0-9_\s]/g, "").split(/\s+/).filter(Boolean);
 }
 
-function buildIDF(docs) {
-  const df = {};
-  const N = docs.length;
-  for (const doc of docs) {
-    const seen = new Set(doc);
-    for (const term of seen) df[term] = (df[term] || 0) + 1;
-  }
-  const idf = {};
-  for (const [term, count] of Object.entries(df)) {
-    idf[term] = Math.log(N / count) + 1;
-  }
-  return idf;
+// "heavy_bleeding_hourly" -> ["heavy","bleeding","hourly"]
+function splitTag(tag) {
+  return String(tag || "").split("_").filter(Boolean);
 }
 
-function tfidf(tokens, idf) {
-  const tf = {};
-  for (const t of tokens) tf[t] = (tf[t] || 0) + 1;
-  const vec = {};
-  for (const [term, count] of Object.entries(tf)) {
-    vec[term] = count * (idf[term] || 1);
-  }
-  return vec;
-}
-
-function cosineSim(a, b) {
-  let dot = 0, magA = 0, magB = 0;
-  const allKeys = new Set([...Object.keys(a), ...Object.keys(b)]);
-  for (const k of allKeys) {
-    const va = a[k] || 0, vb = b[k] || 0;
-    dot += va * vb;
-    magA += va * va;
-    magB += vb * vb;
-  }
-  return magA && magB ? dot / (Math.sqrt(magA) * Math.sqrt(magB)) : 0;
+function buildDoc(doc) {
+  const tagTokens = (doc.tags || []).flatMap(splitTag);
+  const bodyTokens = tokenize(doc.en?.body).slice(0, 80); // cap so a long body can't dominate
+  const titleTokens = tokenize(doc.en?.title);
+  const weightedTags = [];
+  for (let i = 0; i < TAG_WEIGHT; i++) weightedTags.push(...tagTokens);
+  return [...weightedTags, ...titleTokens, ...bodyTokens];
 }
 
 function loadCorpus() {
   try {
     corpus = JSON.parse(fs.readFileSync(CORPUS_PATH, "utf-8"));
-    // Build document vectors from tags + English body text (tags are weighted
-    // heavily because they're the curated retrieval keys).
-    const allTokens = corpus.map((doc) => {
-      const tagTokens = doc.tags.flatMap((t) => t.split("_")); // "heavy_bleeding_hourly" -> ["heavy","bleeding","hourly"]
-      const bodyTokens = tokenize(doc.en.body).slice(0, 80); // cap to avoid long docs dominating
-      return [...tagTokens, ...tagTokens, ...tagTokens, ...bodyTokens]; // tags weighted 3x
-    });
-    idfCache = buildIDF(allTokens);
-    tfidfVectors = allTokens.map((tokens) => tfidf(tokens, idfCache));
+    docTokens = corpus.map(buildDoc);
+    docLen = docTokens.map((t) => t.length);
+    N = corpus.length;
+    avgdl = docLen.reduce((a, b) => a + b, 0) / (N || 1);
+    df = {};
+    for (const toks of docTokens) {
+      for (const term of new Set(toks)) df[term] = (df[term] || 0) + 1;
+    }
   } catch (err) {
     console.error("Failed to load health education corpus:", err.message);
-    corpus = [];
+    corpus = []; docTokens = []; docLen = []; N = 0; avgdl = 0; df = {};
   }
 }
-
 loadCorpus();
 
+function idf(term) {
+  const n = df[term] || 0;
+  // BM25 idf with the +1 inside the log so it can never go negative.
+  return Math.log(1 + (N - n + 0.5) / (n + 0.5));
+}
+
+function bm25(queryTerms, docIndex) {
+  const toks = docTokens[docIndex];
+  const len = docLen[docIndex] || 1;
+  const tf = {};
+  for (const t of toks) tf[t] = (tf[t] || 0) + 1;
+
+  let score = 0;
+  for (const q of queryTerms) {
+    const f = tf[q];
+    if (!f) continue;
+    const denom = f + K1 * (1 - B + B * (len / (avgdl || 1)));
+    score += idf(q) * ((f * (K1 + 1)) / denom);
+  }
+  return score;
+}
+
 /**
- * Retrieve the top-k education cards matching a set of symptom tags and/or
- * free-text query. Returns full corpus entries (with all language variants).
+ * Retrieve the top-k education cards for a set of symptom tags and/or free text.
+ * Returns full corpus entries (all language variants) plus a relevanceScore.
  */
 export function retrieveEducation(symptoms = [], freeText = "", topK = 3) {
   if (corpus.length === 0) return [];
 
-  const queryTokens = [
-    ...symptoms.flatMap((s) => s.split("_")),
-    ...symptoms.flatMap((s) => s.split("_")), // double-weight symptoms
+  const symTokens = symptoms.flatMap(splitTag);
+  const queryTerms = [
+    ...symTokens,
+    ...symTokens, // symptoms double-weighted in the query
     ...tokenize(freeText),
   ];
-  if (queryTokens.length === 0) return [];
+  if (queryTerms.length === 0) return [];
 
-  const queryVec = tfidf(queryTokens, idfCache);
-  const scored = corpus.map((doc, i) => ({
-    doc,
-    score: cosineSim(queryVec, tfidfVectors[i]),
-  }));
+  const querySet = new Set(queryTerms);
+
+  const scored = corpus.map((doc, i) => {
+    let score = bm25(queryTerms, i);
+    // Re-rank: a small, bounded bonus when a document's OWN tags overlap the
+    // query. BM25 already sees the tags (weighted) as tokens; this nudges an
+    // exact tag hit above a merely lexical body match at the same BM25 score.
+    const tagHits = (doc.tags || []).flatMap(splitTag).filter((t) => querySet.has(t)).length;
+    score *= 1 + 0.08 * tagHits;
+    return { doc, score };
+  });
 
   return scored
-    .filter((s) => s.score > 0.05)
+    .filter((s) => s.score > 0)
     .sort((a, b) => b.score - a.score)
     .slice(0, topK)
     .map((s) => ({ ...s.doc, relevanceScore: Number(s.score.toFixed(3)) }));

@@ -230,15 +230,6 @@ export const HELPLINES = [
 
   // --- other ---------------------------------------------------------------
   {
-    number: "1930",
-    dial: "1930",
-    label: "Cyber fraud",
-    detail: "Money taken from your account or UPI. Call within the hour — that is what gets it frozen.",
-    group: "other",
-    authority: "Indian Cyber Crime Coordination Centre (I4C)",
-    icon: "lock",
-  },
-  {
     number: "1033",
     dial: "1033",
     label: "Highway emergency",

@@ -11,13 +11,16 @@
     "seed:demo": "node --env-file-if-exists=.env scripts/seed-demo.js",
     "reset:demo": "node --env-file-if-exists=.env scripts/seed-demo.js",
     "accounts:list": "node --env-file-if-exists=.env scripts/seed-demo.js --list",
-    "accounts:reissue": "node --env-file-if-exists=.env scripts/seed-demo.js --reissue"
+    "accounts:reissue": "node --env-file-if-exists=.env scripts/seed-demo.js --reissue",
+    "test:watson": "node --env-file-if-exists=.env scripts/test-watson.js",
+    "test:llm": "node --env-file-if-exists=.env scripts/test-llm.js"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.112.3",
     "cors": "^2.8.5",
     "express": "^4.19.2",
     "morgan": "^1.10.0",
-    "nanoid": "^5.0.7"
+    "nanoid": "^5.0.7",
+    "nodemailer": "^6.9.14"
   }
 }

@@ -39,9 +39,15 @@ export function UserProvider({ children }) {
   }, []);
 
   const register = useCallback(
-    (handle, password, language) => api.user.register({ handle, password, language }),
+    (handle, password, email, language) => api.user.register({ handle, password, email, language }),
     []
   );
+
+  // Email verification + password recovery (Point 2).
+  const verifyEmail = useCallback((payload) => api.user.verifyEmail(payload), []);
+  const resendVerification = useCallback((payload) => api.user.resendVerification(payload), []);
+  const forgotPassword = useCallback((email) => api.user.forgotPassword(email), []);
+  const resetPassword = useCallback((payload) => api.user.resetPassword(payload), []);
 
   const logout = useCallback(async () => {
     // Clear locally even if the network call fails — a sign-out that appears to
@@ -57,9 +63,27 @@ export function UserProvider({ children }) {
     return res.user;
   }, [user]);
 
+  // Auto-logout on tab change, to protect a signed-in user on a shared handset
+  // (Point 2). When the tab is hidden — switched away, backgrounded, locked —
+  // the session is ended immediately. The app is fully usable signed out, so
+  // the cost of re-signing-in is low next to leaving reproductive-health
+  // history open on a borrowed phone. Only fires when actually signed in.
+  useEffect(() => {
+    if (!user) return;
+    const onHidden = () => {
+      if (document.visibilityState === "hidden") {
+        // Fire-and-forget: clears the cookie server-side and the state locally.
+        logout();
+      }
+    };
+    document.addEventListener("visibilitychange", onHidden);
+    return () => document.removeEventListener("visibilitychange", onHidden);
+  }, [user, logout]);
+
   const value = useMemo(
-    () => ({ user, checking, isSignedIn: Boolean(user), login, register, logout, savePreferences }),
-    [user, checking, login, register, logout, savePreferences]
+    () => ({ user, checking, isSignedIn: Boolean(user), login, register, logout, savePreferences,
+             verifyEmail, resendVerification, forgotPassword, resetPassword }),
+    [user, checking, login, register, logout, savePreferences, verifyEmail, resendVerification, forgotPassword, resetPassword]
   );
 
   return <UserContext.Provider value={value}>{children}</UserContext.Provider>;

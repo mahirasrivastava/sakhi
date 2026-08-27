@@ -1,6 +1,6 @@
 {
   "nav_home": "Home",
-  "nav_sakhi": "Sakhi Navigator",
+  "nav_sakhi": "Common Questions",
   "nav_triage": "Quick Triage",
   "nav_general": "General Triage",
   "nav_nearby": "Find Help",
@@ -111,5 +111,6 @@
   "lite_on_hint": "Tap to use full quality",
   "lite_off_hint": "Tap to save data",
   "speak_listen": "Listen",
-  "speak_stop": "Stop"
+  "speak_stop": "Stop",
+  "nav_pregnancy": "Pregnancy tracker"
 }

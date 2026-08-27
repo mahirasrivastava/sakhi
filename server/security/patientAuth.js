@@ -36,6 +36,7 @@ import path from "path";
 import { fileURLToPath } from "url";
 import { hashPassword, verifyPassword } from "./passwords.js";
 import { serializeCookie } from "./middleware.js";
+import { supabase, isSupabaseConfigured } from "../supabase.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ACCOUNTS_FILE = path.join(__dirname, "..", "data", "patient-accounts.json");
@@ -55,6 +56,11 @@ const TOKEN_BYTES = 32;
 // ---------------------------------------------------------------------------
 
 const HANDLE_RE = /^[a-z0-9_][a-z0-9_.-]{2,31}$/;
+// A deliberately permissive email check: reject the obviously-broken, accept
+// the rest. A stricter regex mostly rejects valid addresses. Real proof the
+// address exists comes from the verification email, not from this pattern.
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const MAX_EMAIL = 254;
 const MIN_PASSWORD = 8;
 const MAX_PASSWORD = 200; // bounded so a huge input cannot be a CPU-burn DoS
 
@@ -73,6 +79,17 @@ export function validateHandle(raw) {
     };
   }
   return { ok: true, handle };
+}
+
+export function validateEmail(raw, { required = true } = {}) {
+  const email = String(raw || "").trim().toLowerCase();
+  if (!email) {
+    return required ? { ok: false, error: "Enter an email so you can recover your account." } : { ok: true, email: null };
+  }
+  if (email.length > MAX_EMAIL || !EMAIL_RE.test(email)) {
+    return { ok: false, error: "That does not look like a valid email address." };
+  }
+  return { ok: true, email };
 }
 
 /**
@@ -107,8 +124,28 @@ function isSequential(pw) {
 // Account store
 // ---------------------------------------------------------------------------
 
-let accounts = [];
+let accounts = [];      // in-memory read cache; Supabase is the source of truth when configured
 let loaded = false;
+
+const ACCOUNTS_TABLE = "patient_accounts";
+export const accountsBackend = isSupabaseConfigured ? "supabase" : "json-file";
+
+// Postgres columns are snake_case; the account object is camelCase. Convert in
+// exactly these two functions so nothing else needs to know the backend.
+function toRow(a) {
+  return {
+    id: a.id, handle: a.handle, email: a.email,
+    email_verified: Boolean(a.emailVerified), password_hash: a.passwordHash,
+    language: a.language, created_at: a.createdAt, last_login_at: a.lastLoginAt,
+  };
+}
+function fromRow(r) {
+  return {
+    id: r.id, handle: r.handle, email: r.email,
+    emailVerified: Boolean(r.email_verified), passwordHash: r.password_hash,
+    language: r.language, createdAt: r.created_at, lastLoginAt: r.last_login_at,
+  };
+}
 
 function writeSecure(contents) {
   const tmp = `${ACCOUNTS_FILE}.tmp`;
@@ -120,9 +157,7 @@ function writeSecure(contents) {
   try { fs.chmodSync(ACCOUNTS_FILE, 0o600); } catch { /* non-POSIX filesystem */ }
 }
 
-function load() {
-  if (loaded) return;
-  loaded = true;
+function loadFromFile() {
   try {
     if (fs.existsSync(ACCOUNTS_FILE)) {
       const parsed = JSON.parse(fs.readFileSync(ACCOUNTS_FILE, "utf-8"));
@@ -133,7 +168,7 @@ function load() {
   }
 }
 
-function persist() {
+function persistFile() {
   try {
     writeSecure(JSON.stringify(accounts, null, 2));
   } catch (err) {
@@ -141,40 +176,96 @@ function persist() {
   }
 }
 
+/**
+ * Load all patient accounts into memory once, at server boot. With Supabase
+ * configured, the table is the source of truth and this fills the read cache;
+ * every write below is write-through (Supabase + cache). Without Supabase,
+ * accounts live in the local JSON file exactly as before.
+ *
+ * The cache is what keeps the auth middleware synchronous — getPatientById runs
+ * on every request — while durability lives in Postgres. The cache is
+ * per-instance and refreshed at boot, which is correct for the current
+ * single-instance deployment; a multi-instance setup would read hot rows from
+ * Supabase directly (a future change, not needed yet).
+ */
+export async function initPatientAccounts() {
+  if (loaded) return;
+  loaded = true;
+  if (isSupabaseConfigured) {
+    const { data, error } = await supabase.from(ACCOUNTS_TABLE).select("*");
+    if (error) {
+      console.error("[patientAuth] could not load accounts from Supabase:", error.message);
+      accounts = [];
+    } else {
+      accounts = (data || []).map(fromRow);
+    }
+  } else {
+    loadFromFile();
+  }
+}
+
+// JSON mode lazy-loads on first touch, so a unit test needs no boot step. In
+// Supabase mode the boot init has already filled the cache.
+function ensureLoaded() {
+  if (loaded) return;
+  if (!isSupabaseConfigured) { loaded = true; loadFromFile(); }
+}
+
+// Write one account through to the durable store and update the read cache.
+async function saveAccount(account) {
+  const i = accounts.findIndex((a) => a.id === account.id);
+  if (i >= 0) accounts[i] = account; else accounts.push(account);
+  if (isSupabaseConfigured) {
+    const { error } = await supabase.from(ACCOUNTS_TABLE).upsert(toRow(account), { onConflict: "id" });
+    if (error) {
+      console.error("[patientAuth] save failed:", error.message);
+      throw new Error("Could not save your account. Please try again.");
+    }
+  } else {
+    persistFile();
+  }
+}
+
 const findByHandle = (handle) => accounts.find((a) => a.handle === handle) || null;
+const findByEmail = (email) => (email ? accounts.find((a) => a.email === email) || null : null);
 const findById = (id) => accounts.find((a) => a.id === id) || null;
 
 /** The shape sent to the client. Never includes the hash. */
 export function publicProfile(account) {
   return {
     handle: account.handle,
+    email: account.email || null,
+    emailVerified: Boolean(account.emailVerified),
     language: account.language || null,
     createdAt: account.createdAt,
   };
 }
 
-export async function registerPatient({ handle, password, language }) {
-  load();
+export async function registerPatient({ handle, password, language, email = null }) {
+  ensureLoaded();
   if (findByHandle(handle)) {
     return { ok: false, error: "That username is taken. Try another." };
+  }
+  if (email && findByEmail(email)) {
+    return { ok: false, error: "That email is already registered." };
   }
 
   const account = {
     id: crypto.randomUUID(),
     handle,
+    email: email || null,
+    emailVerified: false,
     passwordHash: await hashPassword(password),
-    // A display preference, not a health field.
     language: typeof language === "string" ? language.slice(0, 12) : null,
     createdAt: new Date().toISOString(),
     lastLoginAt: null,
   };
-  accounts.push(account);
-  persist();
+  await saveAccount(account);
   return { ok: true, account };
 }
 
 export async function verifyPatient({ handle, password }) {
-  load();
+  ensureLoaded();
   const account = findByHandle(handle);
 
   // Hash even when the handle is unknown, so a missing account and a wrong
@@ -188,21 +279,21 @@ export async function verifyPatient({ handle, password }) {
   if (!ok) return null;
 
   account.lastLoginAt = new Date().toISOString();
-  persist();
+  await saveAccount(account);
   return account;
 }
 
-export function updatePreferences(id, { language }) {
-  load();
+export async function updatePreferences(id, { language }) {
+  ensureLoaded();
   const account = findById(id);
   if (!account) return null;
   if (typeof language === "string") account.language = language.slice(0, 12);
-  persist();
+  await saveAccount(account);
   return account;
 }
 
 export function getPatientById(id) {
-  load();
+  ensureLoaded();
   return findById(id);
 }
 
@@ -326,3 +417,123 @@ export function requirePatientCsrf(req, res, next) {
   }
   next();
 }
+
+// ---------------------------------------------------------------------------
+// Email verification + password reset  (Point 2)
+// ---------------------------------------------------------------------------
+// Tokens are single-use, expiring, and stored hashed in memory — same posture
+// as sessions above. A restart drops pending tokens; that only means a user
+// re-requests the link, which is acceptable for a recovery flow. The raw token
+// is returned to the caller exactly once (to put in the email) and never stored.
+
+const VERIFY_TTL_MS = 24 * 60 * 60e3;   // 24 hours
+const RESET_TTL_MS = 60 * 60e3;         // 1 hour
+const TOKEN_URL_BYTES = 32;
+
+const verifyTokens = new Map(); // hash(token) -> { accountId, expiresAt }
+const resetTokens = new Map();  // hash(token) -> { accountId, expiresAt }
+
+function newToken() {
+  return crypto.randomBytes(TOKEN_URL_BYTES).toString("base64url");
+}
+
+// A short numeric code, offered alongside the link for anyone who cannot click
+// through (feature phone forwarding the SMS, copy-paste stripping the URL).
+function newCode() {
+  return String(crypto.randomInt(0, 1_000_000)).padStart(6, "0");
+}
+
+/** Issue an email-verification token for an account. Returns { token, code }. */
+export function createVerificationToken(accountId) {
+  const token = newToken();
+  const code = newCode();
+  verifyTokens.set(hash(token), { accountId, code, expiresAt: Date.now() + VERIFY_TTL_MS });
+  verifyTokens.set(`code:${accountId}:${code}`, { accountId, token, expiresAt: Date.now() + VERIFY_TTL_MS });
+  return { token, code, ttlMs: VERIFY_TTL_MS };
+}
+
+/** Consume a verification token (or accountId+code). Marks the email verified. */
+export async function verifyEmailToken({ token, accountId, code }) {
+  ensureLoaded();
+  let entry = null;
+  let key = null;
+  if (token) { key = hash(token); entry = verifyTokens.get(key); }
+  else if (accountId && code) { key = `code:${accountId}:${code}`; entry = verifyTokens.get(key); }
+
+  if (!entry || Date.now() > entry.expiresAt) return { ok: false, error: "This link has expired. Request a new one." };
+
+  const account = findById(entry.accountId);
+  if (!account) return { ok: false, error: "Account not found." };
+
+  account.emailVerified = true;
+  await saveAccount(account);
+  // Invalidate both index entries for this verification.
+  verifyTokens.delete(key);
+  if (entry.token) verifyTokens.delete(hash(entry.token));
+  if (entry.code) verifyTokens.delete(`code:${entry.accountId}:${entry.code}`);
+  return { ok: true, account };
+}
+
+/**
+ * Start a password reset. Looks the account up BY EMAIL — the address entered
+ * at signup, exactly as the product requires ("if forgot pwd then go to gmail
+ * which was entered on first login"). Returns the token+code only when a
+ * matching account exists; the ROUTE always responds the same either way so
+ * this cannot be used to test which emails are registered.
+ */
+export function createResetToken(email) {
+  ensureLoaded();
+  const account = findByEmail(String(email || "").trim().toLowerCase());
+  if (!account || !account.email) return null;
+
+  const token = newToken();
+  const code = newCode();
+  resetTokens.set(hash(token), { accountId: account.id, code, expiresAt: Date.now() + RESET_TTL_MS });
+  resetTokens.set(`code:${account.id}:${code}`, { accountId: account.id, token, expiresAt: Date.now() + RESET_TTL_MS });
+  return { account, token, code, ttlMs: RESET_TTL_MS };
+}
+
+/** Complete a password reset. Sets the new hash and drops every session. */
+export async function resetPasswordWithToken({ token, accountId, code, newPassword }) {
+  ensureLoaded();
+  let entry = null; let key = null;
+  if (token) { key = hash(token); entry = resetTokens.get(key); }
+  else if (accountId && code) { key = `code:${accountId}:${code}`; entry = resetTokens.get(key); }
+
+  if (!entry || Date.now() > entry.expiresAt) return { ok: false, error: "This reset link has expired. Request a new one." };
+
+  const policy = validatePatientPassword(newPassword);
+  if (!policy.ok) return { ok: false, error: policy.errors[0], details: policy.errors };
+
+  const account = findById(entry.accountId);
+  if (!account) return { ok: false, error: "Account not found." };
+
+  account.passwordHash = await hashPassword(newPassword);
+  await saveAccount(account);
+
+  // A reset means "I lost control of this account" — kill every live session
+  // for it so a stolen-but-open session cannot survive the recovery.
+  for (const [skey, rec] of sessions) {
+    if (rec.accountId === account.id) sessions.delete(skey);
+  }
+  resetTokens.delete(key);
+  if (entry.token) resetTokens.delete(hash(entry.token));
+  if (entry.code) resetTokens.delete(`code:${entry.accountId}:${entry.code}`);
+  return { ok: true, account };
+}
+
+/** For "resend verification": find an account by handle or email. */
+export function findAccountForVerification({ handle, email }) {
+  ensureLoaded();
+  if (handle) { const a = findByHandle(String(handle).trim().toLowerCase()); if (a) return a; }
+  if (email) return findByEmail(String(email).trim().toLowerCase());
+  return null;
+}
+
+// Sweep expired tokens so the maps do not grow without bound.
+setInterval(() => {
+  const now = Date.now();
+  for (const m of [verifyTokens, resetTokens]) {
+    for (const [k, v] of m) { if (now > v.expiresAt) m.delete(k); }
+  }
+}, 5 * 60e3).unref();

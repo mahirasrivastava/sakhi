@@ -134,6 +134,20 @@ export default function TriageForm({ symptomOptions, title, intro, showPregnant 
                   ? "Nothing selected yet"
                   : `${symptoms.length} selected`}
               </p>
+              <button
+                type="button"
+                onClick={() => {
+                  const el = document.getElementById("triage-own-words");
+                  if (el) {
+                    el.scrollIntoView({ behavior: "smooth", block: "center" });
+                    const ta = el.querySelector("textarea");
+                    if (ta) setTimeout(() => ta.focus(), 350);
+                  }
+                }}
+                style={styles.otherBtn}
+              >
+                <Icon name="info" size={16} /> Something else, or not listed? Describe it in your own words →
+              </button>
             </Step>
 
             <Step n={2} label={t("triage_duration")} hint="Roughly is fine. Put 0 if it started today.">
@@ -190,9 +204,9 @@ export default function TriageForm({ symptomOptions, title, intro, showPregnant 
             <Step
               n={showPregnant ? 5 : 4}
               label={t("triage_freetext")}
-              hint="Optional. Type in your own script, tap the microphone and speak, or use the keyboard button in the corner of the box."
+              hint="Not listed above, or anything else you want to add? Describe it here in your own words — type in your own script, tap the microphone and speak, or use the keyboard button in the corner of the box."
             >
-              <div style={{ position: "relative" }}>
+              <div id="triage-own-words" style={{ position: "relative" }}>
                 <ScriptField
                   as="textarea"
                   value={freeText}
@@ -328,6 +342,9 @@ function HelpAside({ maternal = false }) {
 }
 
 const styles = {
+  otherBtn: { marginTop: 12, width: "100%", textAlign: "left", display: "flex", alignItems: "center", gap: 8,
+    padding: "12px 14px", borderRadius: 12, border: "1px dashed var(--rose)", background: "var(--rose-soft)",
+    color: "var(--rose-deep)", fontSize: 13.5, fontWeight: 600, cursor: "pointer", lineHeight: 1.4 },
   count: { fontSize: 13, color: "var(--ink-muted)", marginTop: 10, fontWeight: 600 },
   severityRow: { display: "flex", alignItems: "center", gap: 10, marginTop: 6 },
   severityNum: {

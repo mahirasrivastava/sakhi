@@ -5,6 +5,7 @@ import Icon from "../components/Icon.jsx";
 import { useReport } from "../context/ReportContext.jsx";
 import { useLanguage } from "../context/LanguageContext.jsx";
 import { speak, stopSpeaking, speechSynthesisSupported } from "../speech.js";
+import { inspectFrame, warmUpEyeDetection, isEyeDetectionAvailable } from "../eyeDetection.js";
 
 // ---------------------------------------------------------------------------
 // Capture geometry
@@ -69,12 +70,16 @@ export default function AnaemiaScreen() {
   const canvasRef = useRef(null);
   const liveCanvasRef = useRef(null);
   const streamRef = useRef(null);
+  const detectingRef = useRef(false);
 
   const { recordAnaemia } = useReport();
   const { t, lang } = useLanguage();
 
   const [streaming, setStreaming] = useState(false);
   const [light, setLight] = useState("red");
+  // Eye-presence gate (Point 4a). "unknown" until the model reports in; if the
+  // model is unavailable we never block on it (graceful degradation).
+  const [eyeStatus, setEyeStatus] = useState("unknown"); // unknown|searching|aligned|noface|unavailable
   const [result, setResult] = useState(null);
   const [rejection, setRejection] = useState(null);
   const [error, setError] = useState(null);
@@ -88,6 +93,7 @@ export default function AnaemiaScreen() {
   function stopCamera() {
     streamRef.current?.getTracks().forEach((tr) => tr.stop());
     streamRef.current = null;
+    setEyeStatus("unknown");
   }
 
   async function startCamera() {
@@ -104,6 +110,14 @@ export default function AnaemiaScreen() {
         await videoRef.current.play();
       }
       setStreaming(true);
+
+      // Kick off the eye-detection model. If it cannot load (offline, blocked
+      // CDN, missing dep) the gate quietly disables itself and the screen works
+      // as before.
+      setEyeStatus("searching");
+      warmUpEyeDetection().then((ready) => {
+        if (!ready) setEyeStatus("unavailable");
+      });
     } catch {
       setError(t("anaemia_no_camera"));
     }
@@ -148,6 +162,32 @@ export default function AnaemiaScreen() {
     const id = setInterval(assessLight, LIVE_INTERVAL_MS);
     return () => clearInterval(id);
   }, [streaming, result, assessLight]);
+
+  // Eye-presence loop (Point 4a). Runs the FaceLandmarker over the live frame
+  // and reports whether an eye sits over the sampling ring. Reentrancy-guarded
+  // because a frame inference can outlast the interval on a slow device.
+  const checkEye = useCallback(async () => {
+    const video = videoRef.current;
+    if (!video || !video.videoWidth || detectingRef.current) return;
+    if (!isEyeDetectionAvailable()) { setEyeStatus("unavailable"); return; }
+    detectingRef.current = true;
+    try {
+      const r = await inspectFrame(video, performance.now());
+      if (!r.available) setEyeStatus("unavailable");
+      else if (!r.faceFound) setEyeStatus("noface");
+      else setEyeStatus(r.aligned ? "aligned" : "noface");
+    } catch {
+      setEyeStatus("unavailable");
+    } finally {
+      detectingRef.current = false;
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!streaming || result) return undefined;
+    const id = setInterval(checkEye, LIVE_INTERVAL_MS);
+    return () => clearInterval(id);
+  }, [streaming, result, checkEye]);
 
   // -------------------------------------------------------------------------
   // Capture
@@ -260,7 +300,11 @@ export default function AnaemiaScreen() {
   }, [result, readAloud]);
 
   const lightCopy = { red: t("anaemia_light_dark"), amber: t("anaemia_light_ok"), green: t("anaemia_light_good") };
-  const canCapture = streaming && !loading && (light === "amber" || light === "green");
+  // The eye gate only tightens capture when the model is actually working. When
+  // it is unavailable or still warming up we fall back to the lighting gate
+  // alone, so a user who cannot load the model is never locked out.
+  const eyeOk = eyeStatus === "aligned" || eyeStatus === "unavailable" || eyeStatus === "unknown";
+  const canCapture = streaming && !loading && (light === "amber" || light === "green") && eyeOk;
 
   return (
     <div className="container" style={{ paddingTop: 40, paddingBottom: 64, maxWidth: 640 }}>
@@ -295,6 +339,19 @@ export default function AnaemiaScreen() {
               <span style={{ ...styles.lamp, background: LAMP[light] }} aria-hidden="true" />
               <span style={{ ...styles.lightText, color: LAMP_TEXT[light] }}>{lightCopy[light]}</span>
             </div>
+          )}
+
+          {streaming && (eyeStatus === "searching" || eyeStatus === "noface") && (
+            <p style={styles.eyeHint} role="status" aria-live="polite">
+              {eyeStatus === "searching"
+                ? "Getting the camera ready…"
+                : "Gently pull down your lower eyelid and place the pink inner rim inside the circle."}
+            </p>
+          )}
+          {streaming && eyeStatus === "aligned" && (
+            <p style={{ ...styles.eyeHint, color: "var(--routine)" }} role="status" aria-live="polite">
+              Eye in position — hold still and capture.
+            </p>
           )}
 
           <div style={styles.actions}>
@@ -388,6 +445,7 @@ function Result({ result, t, showDetails, onToggleDetails, onRetake, onReadAloud
             <Row k="Green-to-red ratio" v={result.features.greenRedRatio} />
             <Row k="Saturation mean" v={result.features.saturationMean} />
             <Row k="Green percentage" v={result.features.greenPct} />
+            <Row k="CIELAB a* (redness)" v={result.features.labA} />
             <Row k="ROI pixels" v={result.features.roiPixelCount} />
             <Row k="ROI ratio" v={result.features.roiRatio} />
             <Row k="Correction factor" v={result.features.correctionFactor} />
@@ -443,6 +501,7 @@ const styles = {
   },
 
   guide: { fontSize: 13.5, color: "var(--ink-soft)", lineHeight: 1.6, marginTop: 14 },
+  eyeHint: { fontSize: 13, color: "var(--ink-soft)", lineHeight: 1.6, marginTop: 10, fontWeight: 600 },
 
   lightRow: { display: "flex", alignItems: "center", gap: 9, marginTop: 12 },
   lamp: { width: 12, height: 12, borderRadius: "50%", flexShrink: 0 },

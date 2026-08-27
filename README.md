@@ -1,33 +1,144 @@
 # Sakhi — private health triage companion
 
 React (Vite) frontend + Node/Express backend. Rules-first, escalate-only triage
-with an optional IBM watsonx.ai Granite reasoning layer.
+for women and girls in rural India, with an optional AI reasoning layer.
 
-## Run it
+**Everything needed to run Sakhi is free.** It works with **zero configuration**
+(rules-only triage, local storage), and every optional feature uses a free-tier
+service. There is no paid dependency anywhere.
 
-Two terminals:
+## Prerequisites
+
+- **Node.js 18 or newer** (`node --version`)
+- npm (comes with Node)
+
+## Setup
+
+### 1. Install dependencies (both folders)
+
+```bash
+cd server && npm install
+cd ../client && npm install
+```
+
+### 2. Create your `.env`
+
+The server reads secrets from `server/.env`. That file is **git-ignored** — it
+holds YOUR keys and must never be committed. `server/.env.example` is the
+**template** that IS committed, so anyone cloning the repo knows what to fill in.
+
+Create your own copy:
 
 ```bash
 cd server
-npm install
-npm start        # http://localhost:4000
+cp .env.example .env      # Windows PowerShell: copy .env.example .env
 ```
+
+You can leave `.env` exactly as-is — the app runs fine with everything blank
+(rules-only triage, data in local JSON files). Fill in a section only to turn
+that feature on. **Do not rename `.env.example` to `.env`** — keep both: the
+example is the shared template, `.env` is your private copy.
+
+### 3. (Optional) Turn on free AI — no Watson, no cost
+
+The AI layer is used for smarter triage, prescription OCR, and the AI report
+summary. **It is entirely optional** — with no provider, triage runs on the
+deterministic rules engine and the app works fully. Pick any of:
+
+- **IBM Granite via Ollama** — local, free, unlimited, offline. **Optional and
+  installed separately** (see below); **not required to run the app**.
+- **IBM Granite via Hugging Face** — free cloud token: https://huggingface.co/settings/tokens → `HF_API_KEY=...`
+- **Groq** (fastest, no card): https://console.groq.com/keys → `GROQ_API_KEY=...`
+- **Google Gemini** (needed for OCR vision): https://aistudio.google.com/apikey → `GEMINI_API_KEY=...`
+
+**Provider priority** (the app uses the first one that is configured; on any
+error it falls back to rules-only triage):
+
+1. **Ollama + IBM Granite** — *only when you explicitly opt in* with `LLM_PROVIDER=ollama`
+2. **Hugging Face + IBM Granite** — the cloud IBM option (`HF_API_KEY`)
+3. **Groq**, then **Gemini** — free fallbacks
+4. **Rules-only** — if no AI provider is configured
+
+> **Prescription OCR** always uses **Gemini** (its vision reads handwriting
+> best) — set `GEMINI_API_KEY` to enable OCR regardless of the text provider.
+
+#### Using IBM Granite locally with Ollama (optional)
+
+This is our preferred setup for the demo, but it is **opt-in and separate** — a
+clone that doesn't do this is unaffected:
+
+1. Install Ollama once from **https://ollama.com** (separate app, not part of this repo).
+2. Download the model once: `ollama pull granite3.3` (~4.9 GB — stored by Ollama
+   on your machine, **never committed to this repo**).
+3. In `server/.env`, uncomment **one line**: `LLM_PROVIDER=ollama`.
+
+Setting `OLLAMA_MODEL` / `OLLAMA_BASE_URL` only customises Ollama — they do **not**
+switch it on, so Ollama can never accidentally become a requirement for someone
+who just clones and runs.
+
+Check any provider with `cd server && npm run test:llm` (it shows "🧠 running IBM
+Granite" when Granite is active).
+
+> IBM watsonx is also supported for anyone who has credits (`WATSONX_API_KEY`,
+> `WATSONX_PROJECT_ID`), but it is **off by default** because it bills per call.
+
+### 4. (Optional) Turn on Supabase (durable database)
+
+Without this, data lives in local JSON files (fine for a demo, lost on a
+redeploy). With it, everything the user creates — triage sessions, health
+history, and accounts — lives in Postgres.
+
+1. Create a project at https://supabase.com.
+2. **Project Settings → API**: copy the **Project URL** and the **`service_role`**
+   key into `server/.env` as `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY`.
+3. **SQL Editor → New query**: paste and Run each migration file in order:
+   `server/migrations/001_schema.sql`, then `002_patient_history.sql`, then
+   `003_patient_accounts.sql`.
+
+Full click-by-click walkthrough (plus Gmail and the scaling Q&A) is in
+**`SETUP-FREE.md`**.
+
+### 5. (Optional) Turn on email
+
+For real password-reset / verification emails, set the `SMTP_*` values in
+`server/.env` (Gmail App Password works). **Without email configured, reset and
+verification links print to the server terminal** — a working dev mode, see the
+"Accounts" note below.
+
+### 6. Run it (two terminals)
 
 ```bash
-cd client
-npm install
-npm run dev       # http://localhost:5173, proxies /api to :4000
+cd server && npm run dev     # http://localhost:4000
 ```
-
-No API keys are required. Without `WATSONX_API_KEY` / `WATSONX_PROJECT_ID` set,
-the triage agent runs in **rules-only mode** — this is a real, working fallback,
-not a stub. To enable the watsonx.ai reasoning layer, set env vars on the server:
-
 ```bash
-WATSONX_API_KEY=...
-WATSONX_PROJECT_ID=...
-WATSONX_URL=https://us-south.ml.cloud.ibm.com   # optional, region-specific
+cd client && npm run dev     # http://localhost:5173, proxies /api to :4000
 ```
+
+## Accounts & data storage
+
+- **Accounts are optional.** The entire app works signed out — triage, anaemia
+  screen, cycle tracker, helplines, schemes, the printable report. An account
+  only lets a returning user carry their history between devices.
+- **Where data lives:** with Supabase configured, triage sessions
+  (`001`), opt-in health history (`002`) and patient accounts (`003`) are all in
+  Postgres. Without it, they fall back to local JSON files under `server/data/`.
+  Accounts store a username, a password **hash** (never plaintext) and an
+  optional recovery email — never health data.
+- **Forgot username/password?** Recovery is by the email entered at signup. If
+  you have **not** set up email (`SMTP_*`), the reset link is printed to the
+  **server terminal** instead of sent — usable for development, but before real
+  users you should configure Gmail so people can actually recover. Because
+  accounts are optional, a forgotten login is not catastrophic: the person can
+  keep using everything signed out, or make a new account.
+
+## What uses AI (all optional, all free)
+
+| Feature | Where | Needs |
+|---|---|---|
+| Triage compound-pattern reasoning | `/triage` | any text provider (Ollama/HF Granite, Groq, Gemini) — else rules-only |
+| Prescription OCR | `/prescription` | Gemini key (vision) |
+| Plain-language report summary | `/report` | any text provider |
+| Retrieval (health cards) | `/sakhi` | none — built-in BM25, no external service |
 
 ## What's built
 
@@ -133,15 +244,15 @@ per-boot salt.
   with live patients.
 - No MFA beyond the activation code. For staff handling minors' records, TOTP
   is the natural next layer.
-- Password reset is not built. Today a locked-out worker needs an administrator
-  to re-provision them.
+- Password reset for **patient accounts** is built (email link / code, see
+  "Accounts & data storage"). For **ASHA staff** it is deliberately not — a
+  locked-out worker is re-provisioned by an administrator.
 
 ## What's intentionally deferred (flagged, not hidden)
 
 Given the timeline, these are documented as future scope rather than half-built:
 tap-to-call SOS flow, offline service worker, accessibility mode (icon picker,
-speech in/out), full `/demo` seeded-scenario route, consent screen, PDF export
-of the result card. The data contracts for most of these (e.g. `bloodDonorStandby`,
+speech in/out), full `/demo` seeded-scenario route, consent screen. The data contracts for most of these (e.g. `bloodDonorStandby`,
 `ashaAlert` on every session) already exist in the API response, so they're
 additive, not a rebuild.
 

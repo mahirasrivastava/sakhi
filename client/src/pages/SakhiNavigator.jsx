@@ -54,7 +54,7 @@ export default function SakhiNavigator() {
   return (
     <div className="container" style={{ paddingTop: 44, paddingBottom: 60, maxWidth: 720 }}>
       <h1 className="display" style={{ fontSize: 28 }}>
-        {t("nav_triage")}
+        {t("nav_sakhi")}
       </h1>
       <p style={{ color: "var(--ink-soft)", marginTop: 8, lineHeight: 1.6 }}>
         Learn about health topics from trusted sources — WHO, India's National Health Mission,

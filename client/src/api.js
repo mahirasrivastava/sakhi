@@ -79,6 +79,12 @@ export const api = {
   // The checklist labels come from the server so they cannot drift out of step
   // with the weights that score them.
   anaemiaQuestions: () => req("/anaemia-screen/questions"),
+  // Read a prescription photo with the free vision model. imageBase64 is a bare
+  // base64 string (no data: prefix); the server strips a prefix anyway.
+  prescriptionRead: (imageBase64, mimeType) =>
+    req("/prescription/read", { method: "POST", body: JSON.stringify({ imageBase64, mimeType }) }),
+  reportSummarize: (context) =>
+    req("/report/summarize", { method: "POST", body: JSON.stringify({ context }) }),
   impact: () => req("/impact"),
   knowledgeCategories: (lang) => req(`/knowledge/categories?lang=${lang}`),
   knowledgeBrowse: (category, lang) => req(`/knowledge/browse?category=${category}&lang=${lang}`),
@@ -98,6 +104,19 @@ export const api = {
     me: () => req("/user/me"),
     setPreferences: (payload) =>
       req("/user/preferences", { method: "PATCH", body: JSON.stringify(payload) }),
+
+    // Email verification + password recovery (Point 2)
+    verifyEmail: (payload) => req("/user/verify-email", { method: "POST", body: JSON.stringify(payload) }),
+    resendVerification: (payload) => req("/user/resend-verification", { method: "POST", body: JSON.stringify(payload) }),
+    forgotPassword: (email) => req("/user/forgot-password", { method: "POST", body: JSON.stringify({ email }) }),
+    resetPassword: (payload) => req("/user/reset-password", { method: "POST", body: JSON.stringify(payload) }),
+
+    // Opt-in, login-gated health history (Point 2). Every call is scoped to the
+    // signed-in account server-side.
+    saveHistory: (kind, data) => req("/user/history", { method: "POST", body: JSON.stringify({ kind, data }) }),
+    listHistory: () => req("/user/history"),
+    deleteHistory: (id) => req(`/user/history/${id}`, { method: "DELETE" }),
+    clearHistory: () => req("/user/history", { method: "DELETE" }),
   },
 
   // --- ASHA authentication ---

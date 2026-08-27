@@ -30,6 +30,6 @@ function computeConfidence(ruleResult, modelResult) {
   let score = 0.6;
   score += Math.min(ruleResult.firedRules.length * 0.1, 0.3);
   if (modelResult.source === "rules-only-fallback") score += 0.1;
-  if (modelResult.source === "watsonx-error-fallback") score -= 0.15;
+  if (modelResult.source === "llm-error-fallback") score -= 0.15;
   return Math.max(0.3, Math.min(0.98, Number(score.toFixed(2))));
 }

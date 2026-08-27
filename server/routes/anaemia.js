@@ -66,7 +66,7 @@
 //    locally calibrated against real CBC values, this says "this looks pale
 //    enough to be worth a blood test" and nothing more.
 
-import { rgbToHsv } from "../utils/colorSpace.js";
+import { rgbToHsv, rgbToLab } from "../utils/colorSpace.js";
 
 const clamp = (x, lo, hi) => Math.max(lo, Math.min(hi, x));
 
@@ -115,8 +115,10 @@ function qualityGate(pixels) {
 // ---------------------------------------------------------------------------
 
 const HUE_RED_HIGH = 35;   // degrees; keep h < this
-const HUE_RED_LOW = 325;   // degrees; or h > this (the arc wraps through 0)
-const MIN_SATURATION = 0.08;
+const HUE_RED_LOW = 300;   // degrees; or h > this. Widened from 325 so pale
+                           // conjunctiva (which drifts toward neutral/high-hue)
+                           // is retained rather than discarded — limit 3.
+const MIN_SATURATION = 0.06; // lowered from 0.08 so low-saturation pale tissue survives
 const MIN_VALUE = 0.15;
 const MIN_ROI_PIXELS = 30;
 
@@ -158,21 +160,40 @@ const BRIGHT_FRACTION = 0.10;
  * a factor far from 1 is a reasonable proxy for "the exposure was poor".
  */
 function whiteBalance(allPixels, roiPixels) {
-  const sorted = allPixels.map(brightnessOf).sort((a, b) => b - a);
-  const take = Math.max(1, Math.round(sorted.length * BRIGHT_FRACTION));
-  const meanBright = sorted.slice(0, take).reduce((a, b) => a + b, 0) / take;
+  // The white reference is the brightest decile of the WHOLE frame (a white-
+  // patch estimate — sclera or a catch-light, not the tissue being measured).
+  const idx = allPixels
+    .map((p, i) => [brightnessOf(p), i])
+    .sort((a, b) => b[0] - a[0]);
+  const take = Math.max(1, Math.round(idx.length * BRIGHT_FRACTION));
 
-  // A fully black frame cannot produce a factor; the quality gate has already
-  // rejected that case, so this guard only protects against division by zero.
-  const correctionFactor = meanBright > 0 ? WHITE_TARGET / meanBright : 1;
+  let rS = 0, gS = 0, bS = 0;
+  for (let k = 0; k < take; k++) {
+    const p = allPixels[idx[k][1]];
+    rS += p.r; gS += p.g; bS += p.b;
+  }
+  const rMean = rS / take, gMean = gS / take, bMean = bS / take;
+
+  // Per-channel (von Kries) gains, bounded so a near-black channel cannot blow
+  // up. This is the correction the old shared-scalar version could not do: a
+  // shared scalar cancels out of every channel RATIO (grRatio, gPct), so it was
+  // inert with respect to the score. Independent per-channel gains DO change the
+  // ratios, which is exactly how a warm/cool colour cast gets corrected instead
+  // of biasing the result toward "healthy" (documented limits 1 and 2).
+  const gain = (m) => (m > 0 ? clamp(WHITE_TARGET / m, 0.25, 4) : 1);
+  const gains = { r: gain(rMean), g: gain(gMean), b: gain(bMean) };
 
   const corrected = roiPixels.map((p) => ({
-    r: clamp(p.r * correctionFactor, 0, 255),
-    g: clamp(p.g * correctionFactor, 0, 255),
-    b: clamp(p.b * correctionFactor, 0, 255),
+    r: clamp(p.r * gains.r, 0, 255),
+    g: clamp(p.g * gains.g, 0, 255),
+    b: clamp(p.b * gains.b, 0, 255),
   }));
 
-  return { correctionFactor, corrected };
+  // One number for the confidence estimate in step 6: how far, on average, the
+  // correction had to reach. Near 1 means exposure and white balance were
+  // already about right.
+  const correctionFactor = (gains.r + gains.g + gains.b) / 3;
+  return { correctionFactor, gains, corrected };
 }
 
 // ---------------------------------------------------------------------------
@@ -186,12 +207,14 @@ function extractFeatures(pixels) {
   let gSum = 0;
   let bSum = 0;
   let satSum = 0;
+  let aSum = 0; // CIELAB a* — the red-green axis pallor actually moves along
 
   for (const p of pixels) {
     rSum += p.r;
     gSum += p.g;
     bSum += p.b;
     satSum += rgbToHsv(p.r, p.g, p.b).s;
+    aSum += rgbToLab(p.r, p.g, p.b).a;
   }
 
   const rMean = rSum / n;
@@ -207,6 +230,9 @@ function extractFeatures(pixels) {
     // Tertiary. Green against the channel mean — an extra discriminator at
     // borderline haemoglobin levels.
     gPct: gMean / ((rMean + gMean + bMean) / 3),
+    // CIELAB a*: high on healthy (red) conjunctiva, falls toward neutral as it
+    // pales. An independent perceptual axis, not another green/red ratio.
+    labA: aSum / n,
   };
 }
 
@@ -214,16 +240,21 @@ function extractFeatures(pixels) {
 // Step 5 — Scoring
 // ---------------------------------------------------------------------------
 
-function score({ grRatio, satMean, gPct }) {
+function score({ grRatio, satMean, gPct, labA }) {
   const fGr = clamp((grRatio - 0.45) / 0.45, 0, 1);
   const fSat = clamp((0.32 - satMean) / 0.25 + 0.5, 0, 1);
   const fGpct = clamp((gPct - 0.85) / 0.3, 0, 1);
+  // a* falls as the tissue pales. ~22 is a rough healthy-conjunctiva centre;
+  // literature-informed, NOT blood-calibrated — same caveat as every threshold
+  // here (limit 4 still stands).
+  const fLabA = clamp((22 - labA) / 22, 0, 1);
 
-  // Green-to-red carries half the weight: best discriminating power in the
-  // benchmark, and the clearest physical basis (haemoglobin's green absorption).
-  const pallorScore = fGr * 0.50 + fSat * 0.30 + fGpct * 0.20;
+  // Green-to-red still leads. a* now carries a fifth of the weight as an
+  // independent redness axis, so a case that fools the green/red ratio under an
+  // odd light has a second, differently-derived feature to catch it.
+  const pallorScore = fGr * 0.40 + fLabA * 0.20 + fSat * 0.25 + fGpct * 0.15;
 
-  return { pallorScore, fGr, fSat, fGpct };
+  return { pallorScore, fGr, fSat, fGpct, fLabA };
 }
 
 // ---------------------------------------------------------------------------
@@ -323,6 +354,7 @@ export function analyzePallor(pixels) {
       greenRedRatio: round3(features.grRatio),
       saturationMean: round3(features.satMean),
       greenPct: round3(features.gPct),
+      labA: round2(features.labA),
       roiPixelCount: roi.length,
       roiRatio: round3(roiRatio),
       correctionFactor: round3(correctionFactor),

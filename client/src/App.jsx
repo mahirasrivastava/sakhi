@@ -18,9 +18,12 @@ import GeneralTriage from "./pages/GeneralTriage.jsx";
 import NearbyHelp from "./pages/NearbyHelp.jsx";
 import AnaemiaScreen from "./pages/AnaemiaScreen.jsx";
 import CycleTracker from "./pages/CycleTracker.jsx";
+import PregnancyTracker from "./pages/PregnancyTracker.jsx";
 import Dashboard from "./pages/Dashboard.jsx";
 import AshaLogin from "./pages/AshaLogin.jsx";
 import UserAccount from "./pages/UserAccount.jsx";
+import AccountRecovery from "./pages/AccountRecovery.jsx";
+import PrescriptionReader from "./pages/PrescriptionReader.jsx";
 import Impact from "./pages/Impact.jsx";
 import Demo from "./pages/Demo.jsx";
 
@@ -48,8 +51,12 @@ export default function App() {
               <Route path="/helplines" element={<Helplines />} />
               <Route path="/report" element={<HealthReport />} />
               <Route path="/anaemia" element={<AnaemiaScreen />} />
+              <Route path="/prescription" element={<PrescriptionReader />} />
               <Route path="/cycle" element={<CycleTracker />} />
+              <Route path="/pregnancy" element={<PregnancyTracker />} />
               <Route path="/account" element={<UserAccount />} />
+              <Route path="/account/verify" element={<AccountRecovery mode="verify" />} />
+              <Route path="/account/reset" element={<AccountRecovery mode="reset" />} />
               <Route path="/impact" element={<Impact />} />
               <Route path="/demo" element={<Demo />} />
 
