@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { getCurrentPosition, reverseGeocode } from "../geo.js";
 import { encodeDigipin, formatDigipin, buildLocationMessage } from "../digipin.js";
 import { callsFor } from "../helplines.js";
+import { useLanguage } from "../context/LanguageContext.jsx";
 import Icon from "./Icon.jsx";
 
 /**
@@ -14,8 +15,12 @@ import Icon from "./Icon.jsx";
  * this card.
  *
  * Design decisions worth stating:
- *  - The call buttons work BEFORE location resolves. Waiting on a GPS fix to
- *    show a dial button would be an actively dangerous ordering.
+ *  - The call buttons are never gated on location. They render regardless of
+ *    which location state we're in — only their position moved, below the
+ *    DIGIPIN capture, because reading out a location code is what most rural
+ *    dispatch calls actually get stuck on, and that is worth leading with.
+ *    Waiting on a GPS fix to show a dial button would still be an actively
+ *    dangerous ordering, and this never does that.
  *  - Location is computed entirely on the device. Nothing here is sent to our
  *    server; the only optional network call is the area-name lookup, which is
  *    allowed to fail silently.
@@ -29,6 +34,7 @@ export default function EmergencyLocator({
   compact = false,
   safety = false,
 }) {
+  const { t } = useLanguage();
   const [loc, setLoc] = useState(null);
   const [placeName, setPlaceName] = useState(null);
   const [status, setStatus] = useState("idle"); // idle | locating | ready | error
@@ -97,15 +103,90 @@ export default function EmergencyLocator({
       {!compact && (
         <>
           <h2 className="display" style={styles.heading}>
-            {safety ? "Talk to someone now" : "Call an ambulance"}
+            {t(safety ? "locator_heading_safety" : "locator_heading_ambulance")}
           </h2>
-          <p style={styles.lead}>
-            Call first, then read out your DIGIPIN. It is ten characters that name a
-            spot about four metres across — far easier to say down a phone than
-            directions, and it works where there is no street address.
-          </p>
+          <p style={styles.lead}>{t("locator_lead")}</p>
         </>
       )}
+
+      {status === "idle" && (
+        <button className="btn btn-primary btn-lg" onClick={locate} style={{ width: "100%", justifyContent: "center" }}>
+          <Icon name="pin" size={19} /> {t("locator_find_button")}
+        </button>
+      )}
+
+      {status === "locating" && <p style={styles.muted}>{t("locator_finding")}</p>}
+
+      {status === "error" && (
+        <div>
+          <p style={styles.error}>{error}</p>
+          <button className="btn btn-ghost" onClick={locate} style={{ marginTop: 8 }}>{t("locator_try_again")}</button>
+          <p style={styles.muted}>{t("locator_error_tip")}</p>
+        </div>
+      )}
+
+      {status === "ready" && loc && (
+        <div>
+          {loc.digipin ? (
+            <>
+              <p style={styles.digipinLabel}>{t("locator_read_aloud_label")}</p>
+              <p style={styles.digipin} aria-label={`Your DIGIPIN is ${loc.digipin.split("").join(" ")}`}>
+                {loc.digipin}
+              </p>
+              <p style={styles.digipinHelp}>{t("locator_say_help")}</p>
+            </>
+          ) : (
+            <p style={styles.error}>{loc.digipinError} {t("locator_use_coords")}</p>
+          )}
+
+          <dl style={styles.details}>
+            <div style={styles.detailRow}>
+              <dt style={styles.dt}>{t("locator_coordinates")}</dt>
+              <dd style={styles.dd}>{loc.lat.toFixed(6)}, {loc.lon.toFixed(6)}</dd>
+            </div>
+            {placeName && (
+              <div style={styles.detailRow}>
+                <dt style={styles.dt}>{t("locator_area")}</dt>
+                <dd style={styles.dd}>{placeName}</dd>
+              </div>
+            )}
+          </dl>
+
+          <div style={styles.actions}>
+            <button className="btn btn-ghost" onClick={copyMessage} style={styles.actionBtn}>
+              {copied && <Icon name="check" size={15} />}
+              {copied ? t("locator_copied") : t("locator_copy")}
+            </button>
+            {/* An SMS carries where a call drops. The body is pre-filled so nobody
+                has to type coordinates while panicking. */}
+            <a
+              className="btn btn-ghost"
+              href={`sms:?&body=${encodeURIComponent(message || "")}`}
+              style={styles.actionBtn}
+            >
+              {t("locator_sms")}
+            </a>
+            <a
+              className="btn btn-ghost"
+              href={`https://www.google.com/maps?q=${loc.lat.toFixed(6)},${loc.lon.toFixed(6)}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              style={styles.actionBtn}
+            >
+              {t("locator_maps")}
+            </a>
+          </div>
+
+          <details style={styles.messageBox}>
+            <summary style={styles.summary}>{t("locator_show_message")}</summary>
+            <pre style={styles.pre}>{message}</pre>
+          </details>
+
+          <p style={styles.privacy}>{t("locator_privacy")}</p>
+        </div>
+      )}
+
+      <div style={styles.divider} />
 
       <div style={styles.callRow}>
         {numbers.map((n, i) => (
@@ -126,95 +207,8 @@ export default function EmergencyLocator({
       </ul>
 
       <Link to="/helplines" className="btn-text" style={{ marginTop: 10 }}>
-        All national helplines <Icon name="arrowRight" size={13} />
+        {t("locator_all_helplines")} <Icon name="arrowRight" size={13} />
       </Link>
-
-      <div style={styles.divider} />
-
-      {status === "idle" && (
-        <button className="btn btn-ghost" onClick={locate} style={{ width: "100%", justifyContent: "center" }}>
-          <Icon name="pin" size={17} /> Find my location code (DIGIPIN)
-        </button>
-      )}
-
-      {status === "locating" && <p style={styles.muted}>Finding your location…</p>}
-
-      {status === "error" && (
-        <div>
-          <p style={styles.error}>{error}</p>
-          <button className="btn btn-ghost" onClick={locate} style={{ marginTop: 8 }}>Try again</button>
-          <p style={styles.muted}>
-            If location will not work, tell the dispatcher the nearest landmark, village
-            name and panchayat instead.
-          </p>
-        </div>
-      )}
-
-      {status === "ready" && loc && (
-        <div>
-          {loc.digipin ? (
-            <>
-              <p style={styles.digipinLabel}>Read this out to the dispatcher</p>
-              <p style={styles.digipin} aria-label={`Your DIGIPIN is ${loc.digipin.split("").join(" ")}`}>
-                {loc.digipin}
-              </p>
-              <p style={styles.digipinHelp}>
-                Say it one character at a time. It locates you to about four metres.
-              </p>
-            </>
-          ) : (
-            <p style={styles.error}>{loc.digipinError} Use the coordinates below instead.</p>
-          )}
-
-          <dl style={styles.details}>
-            <div style={styles.detailRow}>
-              <dt style={styles.dt}>Coordinates</dt>
-              <dd style={styles.dd}>{loc.lat.toFixed(6)}, {loc.lon.toFixed(6)}</dd>
-            </div>
-            {placeName && (
-              <div style={styles.detailRow}>
-                <dt style={styles.dt}>Area</dt>
-                <dd style={styles.dd}>{placeName}</dd>
-              </div>
-            )}
-          </dl>
-
-          <div style={styles.actions}>
-            <button className="btn btn-ghost" onClick={copyMessage} style={styles.actionBtn}>
-              {copied && <Icon name="check" size={15} />}
-              {copied ? "Copied" : "Copy location message"}
-            </button>
-            {/* An SMS carries where a call drops. The body is pre-filled so nobody
-                has to type coordinates while panicking. */}
-            <a
-              className="btn btn-ghost"
-              href={`sms:?&body=${encodeURIComponent(message || "")}`}
-              style={styles.actionBtn}
-            >
-              Send as SMS
-            </a>
-            <a
-              className="btn btn-ghost"
-              href={`https://www.google.com/maps?q=${loc.lat.toFixed(6)},${loc.lon.toFixed(6)}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              style={styles.actionBtn}
-            >
-              Open in Maps
-            </a>
-          </div>
-
-          <details style={styles.messageBox}>
-            <summary style={styles.summary}>Show the full message</summary>
-            <pre style={styles.pre}>{message}</pre>
-          </details>
-
-          <p style={styles.privacy}>
-            Your location was worked out on this phone and was not sent to Sakhi's
-            servers. It is shared only when you press call, copy or SMS.
-          </p>
-        </div>
-      )}
     </div>
   );
 }

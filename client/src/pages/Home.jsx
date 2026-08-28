@@ -10,49 +10,23 @@ import { callsFor } from "../helplines.js";
 // once, each one is a big target with a pictogram and a plain-language
 // description, and nobody has to guess what lives behind a menu.
 const SERVICES = [
-  { to: "/triage", icon: "triage", key: "nav_triage",
-    desc: "Answer a few questions and find out how urgent it is. Takes two minutes." },
-  { to: "/nearby", icon: "pin", key: "nav_nearby",
-    desc: "Call an ambulance and get a location code you can read out on the phone.", urgent: true },
-  { to: "/helplines", icon: "phone", key: "nav_helplines",
-    desc: "Every national helpline — ambulance, women, children, mental health — in one list.", urgent: true },
-  { to: "/anaemia", icon: "eye", key: "nav_anaemia",
-    desc: "Point the camera at your lower eyelid for a straight yes or no on a blood test." },
-  { to: "/prescription", icon: "report", title: "Read a prescription",
-    desc: "Photograph a paper prescription and have it read back to you. Always confirm with your chemist." },
-  { to: "/sakhi", icon: "compass", key: "nav_sakhi",
-    desc: "Read trusted health information by topic. Every card cites WHO or NHM." },
-  { to: "/general", icon: "stethoscope", key: "nav_general",
-    desc: "The same urgency check, for anyone — any age, any symptom." },
-  { to: "/cycle", icon: "calendar", title: "Cycle tracker",
-    desc: "Log your period date by date and see if your cycle is regular, on a simple graph." },
-  { to: "/pregnancy", icon: "pregnancy", title: "Pregnancy tracker",
-    desc: "Your week, trimester and due date from your last period. Danger signs checked." },
-  { to: "/report", icon: "report", key: "nav_report",
-    desc: "Turn everything you have done here into one printable record for a doctor." },
-  { to: "/impact", icon: "chart", key: "nav_impact",
-    desc: "How many people this has helped, and what it found." },
+  { to: "/triage", icon: "triage", key: "nav_triage", descKey: "home_desc_triage" },
+  { to: "/nearby", icon: "pin", key: "nav_nearby", descKey: "home_desc_nearby", urgent: true },
+  { to: "/helplines", icon: "phone", key: "nav_helplines", descKey: "home_desc_helplines", urgent: true },
+  { to: "/anaemia", icon: "eye", key: "nav_anaemia", descKey: "home_desc_anaemia" },
+  { to: "/prescription", icon: "report", key: "nav_prescription", descKey: "home_desc_prescription" },
+  { to: "/sakhi", icon: "compass", key: "nav_sakhi", descKey: "home_desc_sakhi" },
+  { to: "/general", icon: "stethoscope", key: "nav_general", descKey: "home_desc_general" },
+  { to: "/cycle", icon: "calendar", key: "nav_cycle", descKey: "home_desc_cycle" },
+  { to: "/pregnancy", icon: "pregnancy", key: "nav_pregnancy", descKey: "home_desc_pregnancy" },
+  { to: "/report", icon: "report", key: "nav_report", descKey: "home_desc_report" },
+  { to: "/impact", icon: "chart", key: "nav_impact", descKey: "home_desc_impact" },
 ];
 
 const PROMISES = [
-  {
-    icon: "handshake",
-    title: "What Sakhi does",
-    text:
-      "Tells you how urgent something is and where to go. If it is serious, an ASHA worker is alerted so a real person follows up.",
-  },
-  {
-    icon: "ban",
-    title: "What Sakhi never does",
-    text:
-      "It never tells you what illness you have and never prescribes medicine. Only a doctor can do that.",
-  },
-  {
-    icon: "lock",
-    title: "What we keep",
-    text:
-      "No name, no phone number, no account. A health worker sees only how urgent your case is, never who you are.",
-  },
+  { icon: "handshake", titleKey: "home_promise_do_title", textKey: "home_promise_do_text" },
+  { icon: "ban", titleKey: "home_promise_never_title", textKey: "home_promise_never_text" },
+  { icon: "lock", titleKey: "home_promise_keep_title", textKey: "home_promise_keep_text" },
 ];
 
 export default function Home() {
@@ -66,7 +40,7 @@ export default function Home() {
       <section style={styles.heroBand}>
         <div className="container" style={styles.heroInner}>
           <div style={{ maxWidth: 640 }}>
-            <span style={styles.kicker}>Free · Private · No account</span>
+            <span style={styles.kicker}>{t("home_kicker")}</span>
             <h1 className="display" style={styles.heroTitle}>{t("home_title")}</h1>
             <p style={styles.heroSub}>{t("home_subtitle")}</p>
 
@@ -75,7 +49,7 @@ export default function Home() {
                 {t("home_cta")} <Icon name="arrowRight" size={18} />
               </Link>
               <Link to="/sakhi" className="btn btn-ghost btn-lg">
-                <Icon name="compass" size={18} /> Browse health topics
+                <Icon name="compass" size={18} /> {t("home_browse_topics")}
               </Link>
             </div>
 
@@ -95,11 +69,9 @@ export default function Home() {
           <aside style={styles.emergencyPanel}>
             <div style={styles.emergencyTitle}>
               <Icon name="alert" size={19} />
-              Need help right now?
+              {t("home_emergency_title")}
             </div>
-            <p style={styles.emergencyText}>
-              Do not use the symptom check. Call straight away — all of these are free.
-            </p>
+            <p style={styles.emergencyText}>{t("home_emergency_text")}</p>
             {emergencyLines.map((h, i) => (
               <a
                 key={h.number}
@@ -113,39 +85,41 @@ export default function Home() {
               </a>
             ))}
             <Link to="/helplines" className="btn-text" style={{ marginTop: 12 }}>
-              Women, children and mental health lines <Icon name="arrowRight" size={13} />
+              {t("home_emergency_more")} <Icon name="arrowRight" size={13} />
             </Link>
           </aside>
         </div>
       </section>
 
-      <section className="container" style={{ paddingTop: 44, paddingBottom: 20 }}>
-        <div className="section-head">
-          <span className="section-eyebrow">
-            <Icon name="home" size={13} /> Services
-          </span>
-          <h2 className="display section-title">What would you like to do?</h2>
-          <p className="section-sub">Tap any box below. Nothing asks for your name.</p>
-          <div className="section-rule" />
-        </div>
+      <section style={styles.servicesBand}>
+        <div className="container" style={{ paddingTop: 44, paddingBottom: 20 }}>
+          <div className="section-head">
+            <span className="section-eyebrow">
+              <Icon name="home" size={13} /> {t("home_services_eyebrow")}
+            </span>
+            <h2 className="display section-title">{t("home_services_title")}</h2>
+            <p className="section-sub">{t("home_services_sub")}</p>
+            <div className="section-rule" />
+          </div>
 
-        <div className="tile-grid">
-          {SERVICES.map((s) => (
-            <Link
-              key={s.to}
-              to={s.to}
-              className={`tile${s.primary ? " tile-primary" : ""}${s.urgent ? " tile-urgent" : ""}`}
-            >
-              <span className="tile-mark">
-                <Icon name={s.icon} size={24} />
-              </span>
-              <span className="tile-title">{s.title || t(s.key)}</span>
-              <span className="tile-desc">{s.desc}</span>
-              <span className="tile-go">
-                Open <Icon name="arrowRight" size={14} />
-              </span>
-            </Link>
-          ))}
+          <div className="tile-grid">
+            {SERVICES.map((s) => (
+              <Link
+                key={s.to}
+                to={s.to}
+                className={`tile${s.primary ? " tile-primary" : ""}${s.urgent ? " tile-urgent" : ""}`}
+              >
+                <span className="tile-mark">
+                  <Icon name={s.icon} size={24} />
+                </span>
+                <span className="tile-title">{t(s.key)}</span>
+                <span className="tile-desc">{t(s.descKey)}</span>
+                <span className="tile-go">
+                  {t("home_tile_open")} <Icon name="arrowRight" size={14} />
+                </span>
+              </Link>
+            ))}
+          </div>
         </div>
       </section>
 
@@ -157,12 +131,12 @@ export default function Home() {
       <section className="container" style={{ paddingBottom: 50 }}>
         <div style={styles.promiseBand}>
           {PROMISES.map((p) => (
-            <div key={p.title}>
+            <div key={p.titleKey}>
               <span style={styles.promiseIcon}>
                 <Icon name={p.icon} size={22} />
               </span>
-              <h3 style={styles.promiseTitle}>{p.title}</h3>
-              <p style={styles.promiseText}>{p.text}</p>
+              <h3 style={styles.promiseTitle}>{t(p.titleKey)}</h3>
+              <p style={styles.promiseText}>{t(p.textKey)}</p>
             </div>
           ))}
         </div>
@@ -172,6 +146,9 @@ export default function Home() {
 }
 
 const styles = {
+  servicesBand: {
+    background: "linear-gradient(180deg, var(--cream) 0%, var(--rose-soft) 55%, var(--cream) 100%)",
+  },
   heroBand: {
     background: "linear-gradient(180deg, var(--rose-soft) 0%, var(--cream) 100%)",
     borderBottom: "1px solid var(--border)",

@@ -15,13 +15,13 @@ export default function Impact() {
       <h1 className="display" style={{ fontSize: 30 }}>{t("impact_title")}</h1>
 
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 14, marginTop: 26 }}>
-        <StatCard big="~80%" label="of India's doctors are concentrated in urban areas" />
-        <StatCard big="20.6" label="health workers per 10,000 people in India, vs. WHO's benchmark of 44.5" />
-        <StatCard big="4×" label="higher doctor density in urban vs. rural India" />
+        <StatCard big="~80%" label={t("impact_stat1_label")} />
+        <StatCard big="20.6" label={t("impact_stat2_label")} />
+        <StatCard big="4×" label={t("impact_stat3_label")} />
       </div>
 
       <div className="card" style={{ marginTop: 30 }}>
-        <h3 className="display" style={{ fontSize: 18, color: "var(--rose-deep)" }}>Live session counter</h3>
+        <h3 className="display" style={{ fontSize: 18, color: "var(--rose-deep)" }}>{t("impact_live_counter_title")}</h3>
         {stats ? (
           <>
             <p style={{ fontSize: 36, fontFamily: "Fraunces, serif", marginTop: 8 }}>{stats.totalSessions}</p>
@@ -36,22 +36,19 @@ export default function Impact() {
               </div>
             ) : (
               <p style={{ fontSize: 13, color: "var(--ink-muted)", marginTop: 10, lineHeight: 1.6 }}>
-                The breakdown by urgency is visible to signed-in ASHA workers only.
+                {t("impact_breakdown_restricted")}
               </p>
             )}
           </>
         ) : (
-          <p style={{ color: "var(--ink-muted)", marginTop: 10 }}>No sessions logged yet.</p>
+          <p style={{ color: "var(--ink-muted)", marginTop: 10 }}>{t("impact_no_sessions")}</p>
         )}
       </div>
 
       <div className="card" style={{ marginTop: 20 }}>
-        <h3 className="display" style={{ fontSize: 18, color: "var(--rose-deep)" }}>Why privacy, not just proximity</h3>
+        <h3 className="display" style={{ fontSize: 18, color: "var(--rose-deep)" }}>{t("impact_privacy_title")}</h3>
         <p style={{ fontSize: 14.5, color: "var(--ink)", marginTop: 10, lineHeight: 1.7 }}>
-          The doctor-shortage numbers above explain why care is hard to reach. They don't explain why a
-          teenage girl with a period problem or a pregnancy scare often won't say it out loud — not to a
-          male clinician, not in front of family. That's a shame-and-privacy problem, and it needs a
-          private, no-name, voice-first entry point as much as it needs more clinics.
+          {t("impact_privacy_text")}
         </p>
       </div>
     </div>
