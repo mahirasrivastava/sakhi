@@ -6,6 +6,7 @@ import { useUser } from "../context/UserContext.jsx";
 import { NAV } from "../navConfig.js";
 import LanguagePicker from "./LanguagePicker.jsx";
 import ThemeToggle from "./ThemeToggle.jsx";
+import LiteToggle from "./LiteToggle.jsx";
 import Icon from "./Icon.jsx";
 import Logo from "./Logo.jsx";
 
@@ -104,6 +105,7 @@ export default function Navbar() {
             <span className="utility-note">Free · No account needed · Nothing is tied to your name</span>
           </div>
           <div className="utility-right">
+            <LiteToggle />
             <LanguagePicker />
             <ThemeToggle />
           </div>

@@ -18,6 +18,14 @@
   --gold: #C9A24B;
   --on-brand: #FFFFFF;
 
+  /* The Sakhi wordmark's own colours (Logo.jsx), reproduced exactly from the
+     brand handoff for light surfaces. They have no dark-theme value of their
+     own in the handoff — #4A1230 on the dark theme's near-black background
+     computes to ~1.3:1 contrast, functionally invisible — so the dark block
+     below points both at --rose-deep, which was already tuned for this. */
+  --logo-word-dv: #C9256B;
+  --logo-word-en: #4A1230;
+
   /* Surfaces */
   --cream: #FDF8F6;
   --cream-dim: #F5ECE8;
@@ -95,6 +103,11 @@
   --rose-soft: #4A2732;
   --gold: #D9B76A;
   --on-brand: #24151A;
+
+  /* ~10:1 against the dark theme's background, vs. ~1.3:1 for the literal
+     handoff colour — see the note on these tokens at :root. */
+  --logo-word-dv: var(--rose-deep);
+  --logo-word-en: var(--rose-deep);
 
   --cream: #171013;
   --cream-dim: #241A1E;
@@ -844,6 +857,10 @@ input::placeholder, textarea::placeholder { color: var(--ink-muted); }
 /* Keep the field being typed into clear of the docked panel. */
 body.kbd-open { padding-bottom: 52vh; }
 
+/* ConsentGate: lock the page behind the terms modal so it can't be scrolled
+   or reached — see ConsentGate.jsx for the focus trap and z-index note. */
+body.consent-open { overflow: hidden; }
+
 @media (max-width: 640px) {
   .kbd-key { min-width: 30px; font-size: 17px; min-height: 40px; }
 }
@@ -1079,6 +1096,12 @@ body.kbd-open { padding-bottom: 52vh; }
 @media (max-width: 900px) {
   .voice-hero-inner { justify-content: center; text-align: center; }
   .voice-actions { justify-content: center; }
+  /* Once the hero wraps to a single column, the emergency numbers outrank
+     the decorative orb — a phone stacking these in DOM order would put a
+     190px illustration between the headline and 108/112. */
+  .voice-copy { order: 1; }
+  .hero-emergency { order: 2; }
+  .voice-orb-wrap { order: 3; margin-top: 8px; }
 }
 
 /* ---------------------------------------------------------------------------
@@ -1631,7 +1654,7 @@ body.kbd-open { padding-bottom: 52vh; }
   font-family: 'Tiro Devanagari Hindi', serif;
   font-size: 26px;
   line-height: 1.25;
-  color: #C9256B;
+  color: var(--logo-word-dv);
 }
 .logo-wordmark-en {
   font-family: 'Mukta', sans-serif;
@@ -1639,7 +1662,7 @@ body.kbd-open { padding-bottom: 52vh; }
   font-size: 12.5px;
   letter-spacing: 0.28em;
   text-transform: uppercase;
-  color: #4A1230;
+  color: var(--logo-word-en);
 }
 .logo-wordmark-reversed .logo-wordmark-dv { color: #FFFDFE; }
 .logo-wordmark-reversed .logo-wordmark-en { color: #F7C9DC; }
@@ -1726,6 +1749,10 @@ body.kbd-open { padding-bottom: 52vh; }
      owns the bottom of the screen, so the tab bar steps aside rather than
      stacking two bars on top of each other. */
   body.kbd-open .bottom-nav { display: none; }
+  /* Belt and braces alongside ConsentGate's own z-index: a hidden element
+     can't be tapped through the mandatory terms modal, and it drops out of
+     the tab order too. */
+  body.consent-open .bottom-nav { display: none; }
 
   .bottom-nav-item {
     position: relative;

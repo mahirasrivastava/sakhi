@@ -104,8 +104,10 @@ export default function Home() {
 
           {/* Emergency panel, deliberately at the top right rather than buried
               in a footer. Someone who needs 108 needs it before anything else
-              on this page. */}
-          <aside style={styles.emergencyPanel}>
+              on this page — including before the decorative orb, which is why
+              hero-emergency gets priority over voice-orb-wrap once the layout
+              stacks on a phone (see the mobile block in index.css). */}
+          <aside className="hero-emergency" style={styles.emergencyPanel}>
             <div style={styles.emergencyTitle}>
               <Icon name="alert" size={19} />
               {t("home_emergency_title")}

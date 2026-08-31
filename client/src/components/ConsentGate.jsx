@@ -20,11 +20,44 @@ export default function ConsentGate({ children }) {
   const [checked, setChecked] = useState(false);
   const [reachedEnd, setReachedEnd] = useState(false);
   const scrollRef = useRef(null);
+  const modalRef = useRef(null);
+  const titleId = "consent-gate-title";
 
   useEffect(() => {
     setConsented(sessionStorage.getItem(CONSENT_KEY) === "true");
     setChecked(true);
   }, []);
+
+  // A modal that only *looks* blocking isn't one: lock the page behind it,
+  // hide the bottom tab bar (it shares the header's z-index with nothing
+  // that should ever sit above this), and keep Tab from leaving the dialog.
+  useEffect(() => {
+    if (!checked || consented) return;
+    document.body.classList.add("consent-open");
+    modalRef.current?.focus();
+
+    const onKeyDown = (e) => {
+      if (e.key !== "Tab" || !modalRef.current) return;
+      const focusables = modalRef.current.querySelectorAll(
+        'button:not(:disabled), [href], [tabindex]:not([tabindex="-1"])'
+      );
+      if (!focusables.length) return;
+      const first = focusables[0];
+      const last = focusables[focusables.length - 1];
+      if (e.shiftKey && document.activeElement === first) {
+        e.preventDefault();
+        last.focus();
+      } else if (!e.shiftKey && document.activeElement === last) {
+        e.preventDefault();
+        first.focus();
+      }
+    };
+    document.addEventListener("keydown", onKeyDown);
+    return () => {
+      document.body.classList.remove("consent-open");
+      document.removeEventListener("keydown", onKeyDown);
+    };
+  }, [checked, consented]);
 
   const onScroll = useCallback((e) => {
     const el = e.target;
@@ -52,8 +85,16 @@ export default function ConsentGate({ children }) {
 
   return (
     <div style={overlay}>
-      <div className="card" style={modal}>
-        <h3 className="display" style={{ fontSize: 20, color: "var(--rose-deep)", padding: "22px 24px 4px" }}>
+      <div
+        ref={modalRef}
+        className="card"
+        style={modal}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby={titleId}
+        tabIndex={-1}
+      >
+        <h3 id={titleId} className="display" style={{ fontSize: 20, color: "var(--rose-deep)", padding: "22px 24px 4px" }}>
           {t("terms_page_title")}
         </h3>
 
@@ -61,6 +102,8 @@ export default function ConsentGate({ children }) {
           ref={scrollRef}
           onScroll={onScroll}
           style={scrollBox}
+          tabIndex={0}
+          role="document"
         >
           {TERMS_SECTIONS.map((s) => (
             <section key={s.titleKey} style={{ marginBottom: 16 }}>
@@ -87,8 +130,11 @@ export default function ConsentGate({ children }) {
 }
 
 const overlay = {
+  // Above everything else in the app on purpose — the virtual keyboard (90)
+  // included. A "mandatory" gate that another fixed-position element can
+  // out-rank isn't mandatory.
   position: "fixed", inset: 0, background: "var(--overlay)",
-  zIndex: 60, display: "flex", alignItems: "center", justifyContent: "center", padding: 20,
+  zIndex: 100, display: "flex", alignItems: "center", justifyContent: "center", padding: 20,
 };
 const modal = { maxWidth: 480, width: "100%", padding: 0, display: "flex", flexDirection: "column", maxHeight: "min(640px, 88vh)" };
 const scrollBox = {

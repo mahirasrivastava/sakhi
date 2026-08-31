@@ -20,7 +20,7 @@ export default function LiteToggle() {
       aria-pressed={lite}
       title={lite ? t("lite_on_hint") : t("lite_off_hint")}
     >
-      <Icon name={lite ? "drop" : "fill"} size={14} />
+      <Icon name={lite ? "drop" : "globe"} size={14} />
       <span>{lite ? t("lite_on") : t("lite_off")}</span>
     </button>
   );
