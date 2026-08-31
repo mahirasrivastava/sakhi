@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { useUser } from "../context/UserContext.jsx";
 import { useLanguage } from "../context/LanguageContext.jsx";
 import Icon from "../components/Icon.jsx";
+import ErrorNote from "../components/ErrorNote.jsx";
 
 /**
  * Optional account screen.
@@ -180,7 +181,7 @@ export default function UserAccount() {
                 required
               />
             </label>
-            {error && <p style={styles.error} role="alert">{error}</p>}
+            {error && <ErrorNote>{error}</ErrorNote>}
             <button className="btn btn-primary btn-lg" type="submit" disabled={busy}>
               {busy ? t("account_working") : "Send reset link"}
             </button>
@@ -253,7 +254,7 @@ export default function UserAccount() {
               </>
             )}
 
-            {error && <p style={styles.error} role="alert">{error}</p>}
+            {error && <ErrorNote>{error}</ErrorNote>}
 
             <button className="btn btn-primary btn-lg" type="submit" disabled={busy}>
               {busy
@@ -304,6 +305,5 @@ const styles = {
     padding: "10px 12px",
     marginBottom: 14,
   },
-  error: { fontSize: 13.5, color: "var(--emergency)", margin: 0, lineHeight: 1.6 },
   staff: { marginTop: 22, fontSize: 12.5, color: "var(--ink-muted)" },
 };

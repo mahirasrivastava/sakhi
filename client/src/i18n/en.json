@@ -209,5 +209,21 @@
   "terms_s8_body": "You confirm you have read and understood this page. You can read it again at any time from the link at the bottom of every page.",
   "home_group_more": "More",
   "home_annex_title": "Emergency",
-  "home_urgent_tag": "Urgent"
+  "home_urgent_tag": "Urgent",
+  "trust_strip_text": "No name, no phone number, no account. Nothing here is linked to you.",
+  "error_note_lead": "That didn't go through. Nothing you've entered has been lost — please try again.",
+  "home_more_services": "More services",
+  "home_less_services": "Show fewer",
+  "onboarding_language_title": "Choose your language",
+  "onboarding_language_sub": "You can change this any time.",
+  "onboarding_skip": "Skip",
+  "onboarding_intro_title": "Before you start",
+  "onboarding_intro_p1_title": "What Sakhi is",
+  "onboarding_intro_p1_text": "A private health helper for women and girls — free, and in your own language.",
+  "onboarding_intro_p2_title": "Not a government service",
+  "onboarding_intro_p2_text": "Sakhi is an independent project. It is not run by any government office, and issues no official document.",
+  "onboarding_intro_p3_title": "Your privacy",
+  "onboarding_intro_p3_text": "No name, no phone number, no account needed. Nothing here is linked to you.",
+  "onboarding_intro_continue": "Continue",
+  "onboarding_emergency_label": "Need help now?"
 }

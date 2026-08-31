@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useLanguage } from "../context/LanguageContext.jsx";
 import Icon from "./../components/Icon.jsx";
@@ -21,18 +21,45 @@ import en from "../i18n/en.json";
 // The headline pairs the current UI language with English underneath it —
 // the same bilingual convention the masthead already uses, just at hero
 // scale — instead of a small "kicker" badge above generic hero copy.
+// The five things someone is actually likely to be here for. Eleven
+// equal-weight tiles asked a first-time visitor to read and triage eleven
+// options before she'd even used one — this is the same job the nav's own
+// grouping already does, just cut down further to what most people need
+// most often, with everything else one tap away instead of competing for
+// the same visual weight.
 const SERVICES = [
   { to: "/triage", icon: "triage", key: "nav_triage", descKey: "home_desc_triage" },
   { to: "/nearby", icon: "pin", key: "nav_nearby", descKey: "home_desc_nearby", urgent: true },
   { to: "/helplines", icon: "phone", key: "nav_helplines", descKey: "home_desc_helplines", urgent: true },
   { to: "/anaemia", icon: "eye", key: "nav_anaemia", descKey: "home_desc_anaemia" },
-  { to: "/prescription", icon: "report", key: "nav_prescription", descKey: "home_desc_prescription" },
-  { to: "/sakhi", icon: "compass", key: "nav_sakhi", descKey: "home_desc_sakhi" },
-  { to: "/general", icon: "stethoscope", key: "nav_general", descKey: "home_desc_general" },
   { to: "/cycle", icon: "calendar", key: "nav_cycle", descKey: "home_desc_cycle" },
-  { to: "/pregnancy", icon: "pregnancy", key: "nav_pregnancy", descKey: "home_desc_pregnancy" },
-  { to: "/report", icon: "report", key: "nav_report", descKey: "home_desc_report" },
-  { to: "/impact", icon: "chart", key: "nav_impact", descKey: "home_desc_impact" },
+];
+
+// Everything else, grouped exactly the way Navbar's NAV array already
+// groups them (see navConfig.js) rather than inventing a second taxonomy
+// just for this page.
+const MORE_SERVICES = [
+  {
+    titleKey: "nav_group_symptoms", titleFallback: "Check symptoms",
+    items: [
+      { to: "/general", icon: "stethoscope", key: "nav_general" },
+      { to: "/sakhi", icon: "compass", key: "nav_sakhi" },
+    ],
+  },
+  {
+    titleKey: "nav_group_screening", titleFallback: "Screening",
+    items: [
+      { to: "/pregnancy", icon: "pregnancy", key: "nav_pregnancy" },
+    ],
+  },
+  {
+    titleKey: "home_group_more", titleFallback: "More",
+    items: [
+      { to: "/prescription", icon: "report", key: "nav_prescription" },
+      { to: "/report", icon: "report", key: "nav_report" },
+      { to: "/impact", icon: "chart", key: "nav_impact" },
+    ],
+  },
 ];
 
 const PROMISES = [
@@ -43,8 +70,8 @@ const PROMISES = [
 
 // A numbered walkthrough before the tile grid, not after. Someone who has
 // never used Sakhi and does not yet trust it should see the shape of the
-// whole interaction — three short steps, nothing hidden — before being asked
-// to pick from eleven destinations.
+// whole interaction — three short steps, nothing hidden — before being
+// asked to pick from anything.
 const STEPS = [
   { icon: "mic", titleKey: "home_step1_title", textKey: "home_step1_text" },
   { icon: "shield", titleKey: "home_step2_title", textKey: "home_step2_text" },
@@ -55,6 +82,12 @@ export default function Home() {
   const { t, lang } = useLanguage();
   const navigate = useNavigate();
   const emergencyLines = callsFor({ limit: 3 });
+  const [showMore, setShowMore] = useState(false);
+
+  const groupLabel = (group) => {
+    const translated = t(group.titleKey);
+    return translated === group.titleKey ? group.titleFallback : translated;
+  };
 
   // Push to talk, literally: land on the triage form with the mic already
   // listening, instead of making someone tap once to arrive and again to
@@ -134,9 +167,6 @@ export default function Home() {
 
       <section className="container" style={{ paddingTop: 46, paddingBottom: 10 }}>
         <div className="section-head">
-          <span className="section-eyebrow">
-            <Icon name="compass" size={13} /> {t("home_steps_eyebrow")}
-          </span>
           <h2 className="display section-title">{t("home_steps_title")}</h2>
           <p className="section-sub">{t("home_steps_sub")}</p>
           <div className="section-rule" />
@@ -159,9 +189,6 @@ export default function Home() {
       <section style={styles.servicesBand}>
         <div className="container" style={{ paddingTop: 44, paddingBottom: 20 }}>
           <div className="section-head">
-            <span className="section-eyebrow">
-              <Icon name="home" size={13} /> {t("home_services_eyebrow")}
-            </span>
             <h2 className="display section-title">{t("home_services_title")}</h2>
             <p className="section-sub">{t("home_services_sub")}</p>
             <div className="section-rule" />
@@ -185,6 +212,37 @@ export default function Home() {
               </Link>
             ))}
           </div>
+
+          {/* Clearly secondary on purpose — smaller text, no card border, no
+              description line — so it reads as "the rest of the list" rather
+              than competing with the five tiles above it. */}
+          <button
+            type="button"
+            className="more-services-toggle"
+            onClick={() => setShowMore((v) => !v)}
+            aria-expanded={showMore}
+          >
+            {t(showMore ? "home_less_services" : "home_more_services")}
+            <Icon name="chevronDown" size={14} style={{ transform: showMore ? "rotate(180deg)" : undefined }} />
+          </button>
+
+          {showMore && (
+            <div className="more-services">
+              {MORE_SERVICES.map((group) => (
+                <div key={group.titleKey} className="more-services-group">
+                  <p className="more-services-label">{groupLabel(group)}</p>
+                  <div className="more-services-links">
+                    {group.items.map((item) => (
+                      <Link key={item.to} to={item.to} className="more-services-link">
+                        <Icon name={item.icon} size={16} />
+                        {t(item.key)}
+                      </Link>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       </section>
 

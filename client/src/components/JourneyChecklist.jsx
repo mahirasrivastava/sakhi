@@ -28,9 +28,6 @@ export default function JourneyChecklist() {
   return (
     <section className="section" aria-label="Your progress">
       <div className="section-head">
-        <span className="section-eyebrow">
-          <Icon name="report" size={13} /> Your progress
-        </span>
         <h2 className="display section-title">Your health check</h2>
         <p className="section-sub">
           {anyContent

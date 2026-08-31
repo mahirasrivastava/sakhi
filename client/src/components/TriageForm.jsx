@@ -6,6 +6,8 @@ import { api } from "../api.js";
 import ResultCard from "./ResultCard.jsx";
 import ScriptField from "./ScriptField.jsx";
 import Icon from "./Icon.jsx";
+import TrustStrip from "./TrustStrip.jsx";
+import ErrorNote from "./ErrorNote.jsx";
 import { callsFor } from "../helplines.js";
 import { speechRecognitionSupported, startListening } from "../speech.js";
 
@@ -129,7 +131,9 @@ export default function TriageForm({ symptomOptions, title, intro, showPregnant 
           </div>
         </div>
       ) : (
-        <form onSubmit={handleSubmit} className="split" style={{ marginTop: 24 }}>
+        <>
+        <TrustStrip />
+        <form onSubmit={handleSubmit} className="split" style={{ marginTop: 4 }}>
           <div className="card" style={{ padding: 26 }}>
             <Step
               n={1}
@@ -189,16 +193,24 @@ export default function TriageForm({ symptomOptions, title, intro, showPregnant 
             </Step>
 
             <Step n={3} label={t("triage_severity")}>
-              <input
-                type="range" min="1" max="5" value={severity}
-                onChange={(e) => setSeverity(e.target.value)}
-                style={{ width: "100%", maxWidth: 460, accentColor: "var(--rose)" }}
-              />
-              {/* The number alone means little. The word next to it is what
-                  someone actually calibrates against. */}
-              <div style={styles.severityRow}>
-                <span style={styles.severityNum}>{severity}</span>
-                <span style={styles.severityWord}>{SEVERITY_LABELS[severity]}</span>
+              {/* Tappable words, not a slider. A number alone means little,
+                  and a bare 1-5 range also fails anyone relying on colour or
+                  fine motor precision to land on a value — the same
+                  .choice-grid pattern as every other question here, so the
+                  whole form has one interaction model instead of two. */}
+              <div className="choice-grid" role="group" aria-label={t("triage_severity")}>
+                {[1, 2, 3, 4, 5].map((n) => (
+                  <button
+                    type="button"
+                    key={n}
+                    className="choice"
+                    aria-pressed={severity === n}
+                    onClick={() => setSeverity(n)}
+                  >
+                    <span className="choice-icon" aria-hidden="true" style={{ fontWeight: 800, fontSize: 15 }}>{n}</span>
+                    <span>{SEVERITY_LABELS[n]}</span>
+                  </button>
+                ))}
               </div>
             </Step>
 
@@ -258,22 +270,19 @@ export default function TriageForm({ symptomOptions, title, intro, showPregnant 
               {listening && <span style={styles.listening}>Listening — speak now</span>}
             </Step>
 
-            {error && <p style={styles.error} role="alert">{error}</p>}
+            {error && <ErrorNote>{error}</ErrorNote>}
 
             <button type="submit" className="btn btn-primary btn-lg" disabled={loading} style={{ marginTop: 8 }}>
               {loading ? t("triage_loading") : t("triage_submit")}
               {!loading && <Icon name="arrowRight" size={18} />}
             </button>
-            <p style={styles.privacy}>
-              <Icon name="lock" size={14} style={{ display: "inline-block", verticalAlign: "-2px", marginInlineEnd: 5 }} />
-              Nothing here is linked to your name. No account, no phone number.
-            </p>
           </div>
 
           <div>
             <HelpAside maternal={showPregnant && isPregnantOrPossible} />
           </div>
         </form>
+        </>
       )}
     </div>
   );
@@ -369,20 +378,12 @@ const styles = {
     padding: "12px 14px", borderRadius: 12, border: "1px dashed var(--rose)", background: "var(--rose-soft)",
     color: "var(--rose-deep)", fontSize: 13.5, fontWeight: 600, cursor: "pointer", lineHeight: 1.4 },
   count: { fontSize: 13, color: "var(--ink-muted)", marginTop: 10, fontWeight: 600 },
-  severityRow: { display: "flex", alignItems: "center", gap: 10, marginTop: 6 },
-  severityNum: {
-    fontSize: 15, fontWeight: 700, color: "var(--rose-deep)",
-    background: "var(--rose-soft)", borderRadius: 8, padding: "3px 11px",
-  },
-  severityWord: { fontSize: 14.5, color: "var(--ink-soft)" },
   mic: {
     position: "absolute", top: 10, insetInlineEnd: 10, width: 38, height: 38,
     borderRadius: "50%", border: "none",
     display: "flex", alignItems: "center", justifyContent: "center",
   },
   listening: { fontSize: 13, color: "var(--rose)", marginTop: 6, display: "block", fontWeight: 600 },
-  error: { color: "var(--emergency)", fontSize: 14, marginBottom: 10 },
-  privacy: { fontSize: 12.5, color: "var(--ink-muted)", marginTop: 14, lineHeight: 1.6 },
   asideText: { fontSize: 13.5, color: "var(--ink-soft)", lineHeight: 1.6, margin: 0 },
   asideBtn: { justifyContent: "flex-start", textDecoration: "none", fontSize: 14, padding: "11px 14px" },
   asideNum: {

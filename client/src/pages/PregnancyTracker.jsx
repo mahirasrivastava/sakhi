@@ -1,6 +1,7 @@
 import React, { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import Icon from "../components/Icon.jsx";
+import TrustStrip from "../components/TrustStrip.jsx";
 import { useReport } from "../context/ReportContext.jsx";
 
 /**
@@ -66,15 +67,13 @@ export default function PregnancyTracker() {
 
   return (
     <div className="container" style={{ paddingTop: 40, paddingBottom: 64, maxWidth: 760 }}>
-      <span className="section-eyebrow" style={{ color: "var(--rose)" }}>
-        <Icon name="pregnancy" size={13} /> Pregnancy tracker
-      </span>
       <h1 className="display section-title">Track your pregnancy</h1>
       <p className="section-sub">
         Enter the first day of your last period and Sakhi works out your week, trimester and due date.
-        Everything stays on this device — no name, no account.
       </p>
       <div className="section-rule" />
+
+      <TrustStrip />
 
       {/* LMP input */}
       <div className="card" style={{ marginTop: 20 }}>

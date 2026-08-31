@@ -1,6 +1,5 @@
 import React from "react";
 import { useLanguage } from "../context/LanguageContext.jsx";
-import Icon from "../components/Icon.jsx";
 import { TERMS_SECTIONS } from "../terms.js";
 
 // The same content ConsentGate requires a scroll through on first visit,
@@ -11,9 +10,6 @@ export default function TermsAndConditions() {
 
   return (
     <div className="container" style={{ paddingTop: 44, paddingBottom: 60, maxWidth: 720 }}>
-      <span className="section-eyebrow">
-        <Icon name="document" size={13} /> {t("terms_page_title")}
-      </span>
       <h1 className="display section-title">{t("terms_page_title")}</h1>
       <p className="section-sub">{t("terms_page_intro")}</p>
       <div className="section-rule" />

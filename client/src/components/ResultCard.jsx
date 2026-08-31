@@ -168,15 +168,28 @@ export default function ResultCard({ session }) {
   );
 }
 
+// Colour used to be purely decorative here — the bar was always --rose
+// regardless of the value, so the only real signal was the number. Now the
+// fill colour, an icon, and the number all move together: nobody has to
+// read a shade of pink correctly to know a low-confidence result needs a
+// second look, and nobody colourblind is locked out of that either.
+const CONFIDENCE_TIERS = [
+  { min: 0.7, color: "var(--selfcare)", icon: "check" },
+  { min: 0.4, color: "var(--urgent)", icon: "info" },
+  { min: 0, color: "var(--emergency)", icon: "alert" },
+];
+
 function ConfidenceBar({ value, label }) {
   const pct = Math.round(value * 100);
+  const tier = CONFIDENCE_TIERS.find((t) => value >= t.min) || CONFIDENCE_TIERS[CONFIDENCE_TIERS.length - 1];
   return (
     <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
       <span style={{ fontSize: 12, color: "var(--ink-soft)" }}>{label}</span>
+      <Icon name={tier.icon} size={13} style={{ color: tier.color }} />
       <div style={{ width: 90, height: 6, borderRadius: 999, background: "var(--border)", overflow: "hidden" }}>
-        <div style={{ width: `${pct}%`, height: "100%", background: "var(--rose)" }} />
+        <div style={{ width: `${pct}%`, height: "100%", background: tier.color }} />
       </div>
-      <span style={{ fontSize: 12, fontWeight: 600, color: "var(--rose-deep)" }}>{pct}%</span>
+      <span style={{ fontSize: 12, fontWeight: 600, color: tier.color }}>{pct}%</span>
     </div>
   );
 }

@@ -1,6 +1,7 @@
 import React, { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import Icon from "../components/Icon.jsx";
+import TrustStrip from "../components/TrustStrip.jsx";
 import { useReport } from "../context/ReportContext.jsx";
 
 /**
@@ -61,15 +62,14 @@ export default function CycleTracker() {
 
   return (
     <div className="container" style={{ paddingTop: 40, paddingBottom: 64, maxWidth: 760 }}>
-      <span className="section-eyebrow" style={{ color: "var(--rose)" }}>
-        <Icon name="calendar" size={13} /> Cycle tracker
-      </span>
       <h1 className="display section-title">Track your period</h1>
       <p className="section-sub">
         Log the <strong>first day</strong> of each period. Over a few months this shows whether your
-        cycle is regular. Everything stays on this device — no name, no account.
+        cycle is regular.
       </p>
       <div className="section-rule" />
+
+      <TrustStrip />
 
       {/* status banner */}
       <div className="card" style={{ ...styles.banner, ...bannerTone(analysis.tone), marginTop: 20 }}>

@@ -700,6 +700,50 @@ input::placeholder, textarea::placeholder { color: var(--ink-muted); }
 .btn-lg { padding: 16px 34px; font-size: 17px; }
 
 /* ---------------------------------------------------------------------------
+   Trust strip (TrustStrip.jsx)
+   ---------------------------------------------------------------------------
+   Used to be a ~12.5px muted footnote after the submit button. Promoted to a
+   real, visible, icon-led strip before the form — soft-tinted, not bordered,
+   deliberately lighter than a .card so it reads as reassurance, not another
+   dense block on the page (see the doc-style note further down for why
+   everyday screens stay light on borders now).
+--------------------------------------------------------------------------- */
+.trust-strip {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: var(--rose-soft);
+  color: var(--rose-deep);
+  border-radius: var(--radius);
+  padding: 14px 18px;
+  margin-bottom: 20px;
+}
+.trust-strip svg { flex-shrink: 0; }
+.trust-strip p { margin: 0; font-size: 14px; font-weight: 600; line-height: 1.5; }
+
+/* ---------------------------------------------------------------------------
+   Error note (ErrorNote.jsx)
+   ---------------------------------------------------------------------------
+   Warm/amber, not --emergency red — that colour stays reserved for an
+   actually urgent triage result. "The form didn't submit" is not that, and
+   should not look like it on a page someone anxious is already reading.
+--------------------------------------------------------------------------- */
+.error-note {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  background: var(--warn-bg);
+  border: 1px solid var(--warn-border);
+  color: var(--warn-ink);
+  border-radius: var(--radius);
+  padding: 12px 14px;
+  margin: 12px 0;
+}
+.error-note svg { flex-shrink: 0; margin-top: 2px; }
+.error-note-lead { margin: 0; font-size: 13.5px; font-weight: 700; line-height: 1.5; }
+.error-note-body { margin: 3px 0 0; font-size: 13px; line-height: 1.5; opacity: 0.9; }
+
+/* ---------------------------------------------------------------------------
    Two-column page layout
    ---------------------------------------------------------------------------
    The main job on the left, supporting context on the right. On a wide screen
@@ -950,6 +994,59 @@ body.consent-open { overflow: hidden; }
 .tile-urgent { border-color: var(--emergency-border); border-width: 2px; }
 .tile-urgent .tile-mark { background: var(--pill-emergency-bg); color: var(--emergency); }
 .tile-urgent .tile-go { color: var(--emergency); }
+
+/* ---------------------------------------------------------------------------
+   "More services" (Home.jsx) — the other six destinations, deliberately
+   lighter than the five .tile cards above: no border, no card, smaller
+   type, so this reads as "the rest of the list" rather than an equal-weight
+   second grid competing with the first.
+--------------------------------------------------------------------------- */
+.more-services-toggle {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 22px auto 0;
+  padding: 10px 6px;
+  min-height: var(--tap-min);
+  border: none;
+  background: none;
+  color: var(--rose-deep);
+  font: inherit;
+  font-size: 13.5px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.more-services-toggle svg { transition: transform 0.15s ease; }
+.more-services {
+  display: grid;
+  gap: 18px;
+  margin-top: 14px;
+  padding-top: 18px;
+  border-top: 1px solid var(--border);
+}
+.more-services-label {
+  margin: 0 0 8px;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--ink-muted);
+}
+.more-services-links { display: flex; flex-wrap: wrap; gap: 8px; }
+.more-services-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  min-height: var(--tap-min);
+  padding: 8px 14px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--ink);
+  font-size: 13.5px;
+  font-weight: 600;
+  text-decoration: none;
+}
+.more-services-link:hover { border-color: var(--rose); color: var(--rose-deep); }
+.more-services-link svg { color: var(--rose-deep); }
 
 /* ---------------------------------------------------------------------------
    Section headings
@@ -1678,20 +1775,17 @@ body.consent-open { overflow: hidden; }
 .logo-wordmark-reversed .logo-wordmark-dv { color: #FFFDFE; }
 .logo-wordmark-reversed .logo-wordmark-en { color: #F7C9DC; }
 
-/* Flatter, more bordered blocks — a notice board rather than a card deck. */
-.card {
-  border-radius: var(--radius);
-  border: 1px solid var(--border-strong);
-  box-shadow: none;
-}
-.tile {
-  border-radius: var(--radius);
-  border: 1px solid var(--border-strong);
-  box-shadow: none;
-  min-height: 128px;
-}
-.tile:hover { border-color: var(--rose); background: var(--surface-alt); }
-.tile-mark { border-radius: var(--radius-sm); }
+/* .card and .tile used to be re-flattened here into hard 1px
+   --border-strong borders with box-shadow: none — "a notice board rather
+   than a card deck" — applied to every card and tile in the whole app, not
+   just the printable report. That made an everyday screen (a triage form,
+   a home-page tile) look as dense as the document it was never meant to
+   compete with. The heavier grammar now stays where it's earned: the .doc
+   styles further down, for the thing someone actually hands a clinician.
+   Everyday .card / .tile keep their original softer shadow + hairline
+   treatment (defined near the top of this file) — nothing to redeclare
+   here. The tricolour rule and masthead above stay exactly as they were:
+   they're the light-touch trust cue, not the heavy one. */
 
 /* Buttons: bigger, squarer, unambiguous. */
 .btn {

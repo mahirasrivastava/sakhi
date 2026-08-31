@@ -209,5 +209,21 @@
   "terms_s8_body": "आप पुष्टि करती हैं कि आपने इस पृष्ठ को पढ़ और समझ लिया है। आप इसे किसी भी समय हर पृष्ठ के नीचे दिए लिंक से फिर से पढ़ सकती हैं।",
   "home_group_more": "अधिक",
   "home_annex_title": "आपातकाल",
-  "home_urgent_tag": "ज़रूरी"
+  "home_urgent_tag": "ज़रूरी",
+  "trust_strip_text": "कोई नाम नहीं, कोई फ़ोन नंबर नहीं, कोई अकाउंट नहीं। यहां कुछ भी आपसे नहीं जुड़ा है।",
+  "error_note_lead": "यह नहीं भेजा जा सका। आपने जो भी दर्ज किया है वह सुरक्षित है — कृपया फिर से कोशिश करें।",
+  "home_more_services": "अधिक सेवाएं",
+  "home_less_services": "कम दिखाएं",
+  "onboarding_language_title": "अपनी भाषा चुनें",
+  "onboarding_language_sub": "आप इसे कभी भी बदल सकती हैं।",
+  "onboarding_skip": "छोड़ें",
+  "onboarding_intro_title": "शुरू करने से पहले",
+  "onboarding_intro_p1_title": "सखी क्या है",
+  "onboarding_intro_p1_text": "महिलाओं और लड़कियों के लिए एक निजी स्वास्थ्य सहायक — मुफ़्त, और आपकी अपनी भाषा में।",
+  "onboarding_intro_p2_title": "यह कोई सरकारी सेवा नहीं है",
+  "onboarding_intro_p2_text": "सखी एक स्वतंत्र परियोजना है। यह किसी सरकारी कार्यालय द्वारा नहीं चलाई जाती, और कोई आधिकारिक दस्तावेज़ जारी नहीं करती।",
+  "onboarding_intro_p3_title": "आपकी गोपनीयता",
+  "onboarding_intro_p3_text": "कोई नाम, फ़ोन नंबर या अकाउंट ज़रूरी नहीं। यहां कुछ भी आपसे नहीं जुड़ा है।",
+  "onboarding_intro_continue": "आगे बढ़ें",
+  "onboarding_emergency_label": "अभी मदद चाहिए?"
 }

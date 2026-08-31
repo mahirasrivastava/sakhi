@@ -2,6 +2,8 @@ import React, { useCallback, useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { api } from "../api.js";
 import Icon from "../components/Icon.jsx";
+import TrustStrip from "../components/TrustStrip.jsx";
+import ErrorNote from "../components/ErrorNote.jsx";
 import { useReport } from "../context/ReportContext.jsx";
 import { useLanguage } from "../context/LanguageContext.jsx";
 import { speak, stopSpeaking, speechSynthesisSupported } from "../speech.js";
@@ -311,6 +313,8 @@ export default function AnaemiaScreen() {
       <h1 className="display" style={{ fontSize: 28, marginBottom: 6 }}>{t("anaemia_title")}</h1>
       <p style={styles.subtitle}>{t("anaemia_subtitle")}</p>
 
+      <TrustStrip />
+
       {/* Offscreen working canvases. Never displayed, never uploaded. */}
       <canvas ref={canvasRef} width={ANALYSIS_PX} height={ANALYSIS_PX} style={{ display: "none" }} />
       <canvas ref={liveCanvasRef} width={LIVE_PX} height={LIVE_PX} style={{ display: "none" }} />
@@ -365,9 +369,9 @@ export default function AnaemiaScreen() {
           </div>
 
           {rejection && (
-            <p style={styles.reject}>{t(REJECT_KEYS[rejection] || "anaemia_reject_generic")}</p>
+            <ErrorNote>{t(REJECT_KEYS[rejection] || "anaemia_reject_generic")}</ErrorNote>
           )}
-          {error && <p style={styles.error}>{error}</p>}
+          {error && <ErrorNote>{error}</ErrorNote>}
         </div>
       )}
 
@@ -508,9 +512,6 @@ const styles = {
   lightText: { fontSize: 13.5, fontWeight: 600 },
 
   actions: { marginTop: 16, display: "flex", gap: 10, flexWrap: "wrap" },
-
-  reject: { color: "var(--urgent)", fontSize: 13.5, marginTop: 12, lineHeight: 1.6 },
-  error: { color: "var(--emergency)", fontSize: 13.5, marginTop: 12, lineHeight: 1.6 },
 
   confidenceWrap: { marginTop: 16 },
   confidenceHead: { display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 10 },

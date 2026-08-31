@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { api } from "../api.js";
+import ErrorNote from "../components/ErrorNote.jsx";
 
 /**
  * Landing page for the links Sakhi emails (Point 2).
@@ -112,7 +113,7 @@ function ResetView({ token }) {
           <input className="field-input" type="password" value={confirm}
             onChange={(e) => setConfirm(e.target.value)} autoComplete="new-password" required />
         </label>
-        {error && <p style={{ color: "var(--emergency)", fontSize: 13.5, margin: 0 }} role="alert">{error}</p>}
+        {error && <ErrorNote>{error}</ErrorNote>}
         <button className="btn btn-primary btn-lg" type="submit" disabled={busy}>
           {busy ? "Saving…" : "Set new password"}
         </button>

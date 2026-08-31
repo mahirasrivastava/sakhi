@@ -1,6 +1,7 @@
 import React, { useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { api } from "../api.js";
+import ErrorNote from "../components/ErrorNote.jsx";
 
 /**
  * Prescription reader (point 4b) — a FREE vision model reads a photo of a
@@ -70,7 +71,7 @@ export default function PrescriptionReader() {
         {preview && (
           <img src={preview} alt="prescription preview" style={styles.preview} />
         )}
-        {error && <p style={styles.error} role="alert">{error}</p>}
+        {error && <ErrorNote>{error}</ErrorNote>}
       </div>
 
       {result && (
@@ -160,7 +161,6 @@ const styles = {
   sub: { fontSize: 14.5, color: "var(--ink-soft)", lineHeight: 1.6, margin: 0 },
   privacy: { fontSize: 12.5, color: "var(--ink-muted)", lineHeight: 1.6, marginTop: 12 },
   preview: { width: "100%", borderRadius: 12, marginTop: 14, maxHeight: 320, objectFit: "contain", background: "var(--cream-dim)" },
-  error: { color: "var(--emergency)", fontSize: 13.5, marginTop: 12, lineHeight: 1.6 },
   disclaimer: {
     fontSize: 13.5, color: "var(--emergency)", background: "var(--pill-emergency-bg)",
     border: "1px solid var(--border)", borderRadius: 10, padding: "10px 12px", margin: 0, lineHeight: 1.6,
