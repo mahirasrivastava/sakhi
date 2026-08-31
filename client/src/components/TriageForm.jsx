@@ -1,5 +1,5 @@
-import React, { useState, useRef } from "react";
-import { Link } from "react-router-dom";
+import React, { useEffect, useState, useRef } from "react";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useLanguage } from "../context/LanguageContext.jsx";
 import { useReport } from "../context/ReportContext.jsx";
 import { api } from "../api.js";
@@ -26,14 +26,12 @@ export default function TriageForm({ symptomOptions, title, intro, showPregnant 
   const [session, setSession] = useState(null);
   const [listening, setListening] = useState(false);
   const stopListeningRef = useRef(null);
+  const location = useLocation();
+  const navigate = useNavigate();
 
-  function toggleMic() {
-    if (listening) {
-      stopListeningRef.current?.();
-      setListening(false);
-      return;
-    }
+  function startVoiceInput() {
     setListening(true);
+    setError(null);
     stopListeningRef.current = startListening(lang, {
       onResult: (transcript) => setFreeText(transcript),
       onEnd: () => setListening(false),
@@ -43,6 +41,31 @@ export default function TriageForm({ symptomOptions, title, intro, showPregnant 
       },
     });
   }
+
+  function toggleMic() {
+    if (listening) {
+      stopListeningRef.current?.();
+      setListening(false);
+      return;
+    }
+    startVoiceInput();
+  }
+
+  // Home's "tap to speak" hero button lands here with autoListen in the
+  // navigation state — the point of a push-to-talk button is that pushing
+  // it starts the talking, not that it opens a form you then have to tap
+  // the mic on again. Falls back to just scrolling to the field (so typing
+  // is still one motion, not a hunt) when the browser has no speech API.
+  useEffect(() => {
+    if (!location.state?.autoListen) return;
+    const el = document.getElementById("triage-own-words");
+    if (el) el.scrollIntoView({ behavior: "smooth", block: "center" });
+    if (speechRecognitionSupported()) startVoiceInput();
+    // Consume the state so a later back/forward through history doesn't
+    // silently restart the mic.
+    navigate(location.pathname, { replace: true, state: {} });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   function toggleSymptom(id) {
     setSymptoms((prev) => (prev.includes(id) ? prev.filter((s) => s !== id) : [...prev, id]));

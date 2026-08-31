@@ -992,6 +992,7 @@ body.kbd-open { padding-bottom: 52vh; }
   width: 64px;
   height: 64px;
   border-radius: 50%;
+  border: none;
   background: var(--rose);
   color: var(--on-brand);
   display: flex;
@@ -1001,7 +1002,10 @@ body.kbd-open { padding-bottom: 52vh; }
   box-shadow: 0 6px 18px rgba(176, 74, 99, 0.32);
   position: relative;
   text-decoration: none;
+  cursor: pointer;
+  padding: 0;
 }
+.voice-btn:hover { background: var(--rose-deep); }
 .voice-btn::before {
   content: "";
   position: absolute;
@@ -1016,7 +1020,11 @@ body.kbd-open { padding-bottom: 52vh; }
   100% { transform: scale(1.4); opacity: 0; }
 }
 .voice-label { display: flex; flex-direction: column; gap: 5px; }
-.voice-label-main { font-size: 15px; font-weight: 700; color: var(--ink); text-decoration: none; }
+.voice-label-main {
+  font: inherit; font-size: 15px; font-weight: 700; color: var(--ink);
+  text-decoration: none; background: none; border: none; padding: 0;
+  cursor: pointer; text-align: start;
+}
 .voice-label-main:hover { color: var(--rose-deep); }
 .voice-label-alt {
   display: inline-flex; align-items: center; gap: 5px;

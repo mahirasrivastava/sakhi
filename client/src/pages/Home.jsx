@@ -1,5 +1,5 @@
 import React from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useLanguage } from "../context/LanguageContext.jsx";
 import Icon from "./../components/Icon.jsx";
 import JourneyChecklist from "../components/JourneyChecklist.jsx";
@@ -53,7 +53,15 @@ const STEPS = [
 
 export default function Home() {
   const { t, lang } = useLanguage();
+  const navigate = useNavigate();
   const emergencyLines = callsFor({ limit: 3 });
+
+  // Push to talk, literally: land on the triage form with the mic already
+  // listening, instead of making someone tap once to arrive and again to
+  // start talking.
+  function startCheckIn() {
+    navigate("/triage", { state: { autoListen: true } });
+  }
 
   return (
     <>
@@ -72,11 +80,11 @@ export default function Home() {
             <p className="voice-sub">{t("home_subtitle")}</p>
 
             <div className="voice-actions">
-              <Link to="/triage" className="voice-btn" aria-label={t("home_cta")}>
+              <button type="button" onClick={startCheckIn} className="voice-btn" aria-label={t("home_cta")}>
                 <Icon name="mic" size={26} />
-              </Link>
+              </button>
               <div className="voice-label">
-                <Link to="/triage" className="voice-label-main">{t("home_cta")}</Link>
+                <button type="button" onClick={startCheckIn} className="voice-label-main">{t("home_cta")}</button>
                 <Link to="/sakhi" className="voice-label-alt">
                   <Icon name="compass" size={12} /> {t("home_browse_topics")}
                 </Link>
