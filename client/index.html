@@ -15,17 +15,19 @@
     <link rel="manifest" href="/site.webmanifest" />
 
     <!-- Tints the mobile browser UI to match the header. Two values so the bar
-         does not stay cream when the app is in dark mode. -->
-    <meta name="theme-color" content="#B04A63" media="(prefers-color-scheme: light)" />
+         does not stay cream when the app is in dark mode. Matches --rose /
+         --utility-bg in index.css — keep in sync if either token moves. -->
+    <meta name="theme-color" content="#C9256B" media="(prefers-color-scheme: light)" />
     <meta name="theme-color" content="#2C1A20" media="(prefers-color-scheme: dark)" />
 
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
-    <!-- Wordmark-only: the सखी / SAKHI lockup next to the brand mark uses this
-         pair (see Logo.jsx), not the app's own Fraunces/Inter — it's part of
-         the logo, reproduced from the brand handoff, not UI type. -->
-    <link href="https://fonts.googleapis.com/css2?family=Tiro+Devanagari+Hindi&family=Mukta:wght@600&display=swap" rel="stylesheet" />
+    <!-- One request for both families. The Tiro Devanagari Hindi / Mukta pair
+         is wordmark-only — the सखी / SAKHI lockup next to the brand mark uses
+         it (see Logo.jsx), not the app's own Fraunces/Inter UI type — but
+         Google Fonts happily bundles unrelated families into one stylesheet
+         response, so there's no reason to pay for a second round trip. -->
+    <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600&family=Tiro+Devanagari+Hindi&family=Mukta:wght@600&display=swap" rel="stylesheet" />
   </head>
   <body>
     <div id="root"></div>

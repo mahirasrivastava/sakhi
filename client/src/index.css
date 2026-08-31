@@ -11,18 +11,29 @@
 --------------------------------------------------------------------------- */
 
 :root {
-  /* Brand */
-  --rose: #B04A63;
-  --rose-deep: #7E2F44;
-  --rose-soft: #F2D9DF;
+  /* Brand — the logo handoff's own token table (--sakhi-pink-600/700/100),
+     adopted site-wide so the mark and the UI are one palette instead of two
+     related-but-different pinks. Contrast checked against both directions
+     this is used: --rose on white is 5.30:1, --rose-deep on white is
+     7.07:1 — both comfortably clear AA, and marginally better than the
+     values they replace (#B04A63 was 5.24:1). Dark-theme values are
+     untouched: they were already tuned lighter for the dark background
+     rather than being a straight derivative of the light value, and
+     nothing about this swap changes that. */
+  --rose: #C9256B;
+  --rose-deep: #A81C58;
+  --rose-soft: #FBD9E6;
   --gold: #C9A24B;
   --on-brand: #FFFFFF;
 
   /* The Sakhi wordmark's own colours (Logo.jsx), reproduced exactly from the
-     brand handoff for light surfaces. They have no dark-theme value of their
-     own in the handoff — #4A1230 on the dark theme's near-black background
-     computes to ~1.3:1 contrast, functionally invisible — so the dark block
-     below points both at --rose-deep, which was already tuned for this. */
+     brand handoff for light surfaces — now identical to --rose/--rose-deep
+     above, kept as their own tokens because the handoff specifies them
+     independently and a future brand tweak to one shouldn't silently move
+     the other. They have no dark-theme value of their own in the handoff —
+     #4A1230 on the dark theme's near-black background computes to ~1.3:1
+     contrast, functionally invisible — so the dark block below points both
+     at --rose-deep, which was already tuned for this. */
   --logo-word-dv: #C9256B;
   --logo-word-en: #4A1230;
 
