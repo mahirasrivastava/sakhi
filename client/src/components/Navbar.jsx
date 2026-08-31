@@ -3,9 +3,11 @@ import { NavLink, useLocation } from "react-router-dom";
 import { useLanguage } from "../context/LanguageContext.jsx";
 import { useAuth } from "../context/AuthContext.jsx";
 import { useUser } from "../context/UserContext.jsx";
+import { NAV } from "../navConfig.js";
 import LanguagePicker from "./LanguagePicker.jsx";
 import ThemeToggle from "./ThemeToggle.jsx";
 import Icon from "./Icon.jsx";
+import Logo from "./Logo.jsx";
 
 // ---------------------------------------------------------------------------
 // Navigation
@@ -16,14 +18,9 @@ import Icon from "./Icon.jsx";
 // line. Everything was top-level, so nothing read as important, and the row
 // wrapped onto two lines on a laptop and scrolled horizontally on a phone.
 //
-// Now it is five top-level items, grouped by what someone came here to DO
-// rather than by which feature happens to exist:
-//
-//   Home
-//   Check symptoms   -> triage, general triage, health guide
-//   Screening        -> anaemia, cycle
-//   Find help        -> nearby facilities, helplines
-//   My report
+// Now it is five top-level items (see navConfig.js — BottomNav renders from
+// the same list, so the phone tab bar and this drawer can never disagree
+// about what the five core destinations are).
 //
 // Impact moved to the footer: it is an "about this project" page, not a task,
 // and it was taking a slot from things people actually need. The three emergency
@@ -37,42 +34,6 @@ import Icon from "./Icon.jsx";
 // all. They are paired with text, never used alone — and they are drawn (see
 // Icon.jsx) rather than typed as emoji, so they inherit the active colour and
 // render identically on a five-year-old handset.
-const NAV = [
-  { to: "/", key: "nav_home", icon: "home" },
-  {
-    id: "symptoms",
-    key: "nav_group_symptoms",
-    fallback: "Check symptoms",
-    icon: "triage",
-    children: [
-      { to: "/triage", key: "nav_triage", icon: "triage", blurb: "Tell us what is wrong and how urgent it is" },
-      { to: "/general", key: "nav_general", icon: "stethoscope", blurb: "General triage for anyone" },
-      { to: "/sakhi", key: "nav_sakhi", icon: "compass", blurb: "Browse trusted health information" },
-    ],
-  },
-  {
-    id: "screening",
-    key: "nav_group_screening",
-    fallback: "Screening",
-    icon: "eye",
-    children: [
-      { to: "/anaemia", key: "nav_anaemia", icon: "eye", blurb: "Do you need a blood test?" },
-      { to: "/cycle", key: "nav_cycle", icon: "calendar", blurb: "Track your period, date by date" },
-      { to: "/pregnancy", key: "nav_pregnancy", icon: "pregnancy", blurb: "Week, trimester and due date" },
-    ],
-  },
-  {
-    id: "help",
-    key: "nav_group_help",
-    fallback: "Find help",
-    icon: "pin",
-    children: [
-      { to: "/nearby", key: "nav_nearby", icon: "pin", blurb: "Nearest hospital, PHC or sub-centre" },
-      { to: "/helplines", key: "nav_helplines", icon: "phone", blurb: "Every national toll-free number" },
-    ],
-  },
-  { to: "/report", key: "nav_report", icon: "report" },
-];
 
 export default function Navbar() {
   const { t } = useLanguage();
@@ -151,16 +112,11 @@ export default function Navbar() {
 
       <div className="container header-main">
         <NavLink to="/" className="masthead" onClick={() => setOpen(false)}>
-          <span className="masthead-mark" aria-hidden="true">स</span>
+          <Logo size={42} />
           <span className="masthead-text">
-            {/* Both scripts, the way every Indian public-service masthead is
-                set — so a reader who cannot read one can still read the other. */}
-            <span className="masthead-hi">सखी — आपकी भाषा में स्वास्थ्य सहायता</span>
-            <span className="masthead-en">Sakhi</span>
+            <span className="logo-wordmark-dv">सखी</span>
+            <span className="logo-wordmark-en">SAKHI</span>
             <span className="masthead-tag">Health triage &amp; screening</span>
-            <span className="masthead-independent">
-              An independent service — not a government app
-            </span>
           </span>
         </NavLink>
 

@@ -1,28 +1,49 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64" role="img" aria-label="Sakhi">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 88 88" width="88" height="88" role="img" aria-label="Sakhi">
   <title>Sakhi</title>
   <!--
-    The app's brand mark: the Devanagari letter स (sa, for Sakhi) on the rose
-    tile used in the header.
+    The app icon variant of the Sakhi mark: a woman holding the hand of a
+    teenage girl, on the same rounded gradient tile used for the phone
+    home-screen icon (see Logo.jsx and the brand handoff for the full
+    variant table). Static — no sway/flutter/hold animation in a favicon.
 
-    A tab icon is seen at 16px more often than anywhere else, so this is drawn
-    for that size first: one glyph, one shape, high contrast, no fine detail
-    that would turn to mush. The PNG fallbacks beside this file are rasterised
-    from this same artwork, which matters because they carry the glyph as pixels
-    and therefore render identically on machines without a Devanagari font.
+    Kept in the source coordinate space of the mark (a 200x240 figure group,
+    scaled and cropped bottom-aligned into the 88x88 tile) so this file can
+    be regenerated directly from Logo.jsx's path data if the mark ever
+    changes, rather than hand-tweaked as a one-off.
   -->
   <defs>
-    <linearGradient id="tile" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0" stop-color="#C25A73"/>
-      <stop offset="1" stop-color="#8E3550"/>
+    <linearGradient id="tile" x1="0" y1="0" x2="0.6" y2="1">
+      <stop offset="0" stop-color="#FBD9E6"/>
+      <stop offset="1" stop-color="#F7A9C6"/>
     </linearGradient>
+    <clipPath id="tileClip"><rect width="88" height="88" rx="22"/></clipPath>
   </defs>
 
-  <rect width="64" height="64" rx="14" fill="url(#tile)"/>
+  <rect width="88" height="88" rx="22" fill="url(#tile)"/>
 
-  <!-- Sized to leave a clear margin inside the tile. A glyph that touches the
-       rounded corners reads as cramped at 16px and gets clipped by the circular
-       masks some platforms apply to app icons. -->
-  <text x="32" y="45.5" text-anchor="middle"
-        font-family="'Devanagari Sangam MN','Kohinoor Devanagari','Nirmala UI','Noto Sans Devanagari','Mangal',serif"
-        font-size="38" font-weight="600" fill="#FFFFFF">स</text>
+  <g clip-path="url(#tileClip)">
+    <g transform="translate(8 2) scale(0.36)">
+      <!-- Woman -->
+      <path d="M52 31 C 39 38, 34 57, 41 72 C 44 79, 55 77, 52 68 C 48 56, 50 42, 58 34 Z" fill="#6F0F38"/>
+      <ellipse cx="42" cy="45" rx="9" ry="10" fill="#6F0F38"/>
+      <ellipse cx="63" cy="45" rx="15" ry="17" fill="#C9256B"/>
+      <path d="M47 48 C 45 31, 56 24, 66 26 C 76 28, 80 35, 79 45 C 75 36, 70 32, 62 33 C 54 35, 49 40, 48 49 Z" fill="#6F0F38"/>
+      <path d="M56 60 h 14 v 10 h -14 Z" fill="#C9256B"/>
+      <path d="M63 66 C 45 71, 39 97, 41 127 L 30 219 L 97 219 L 85 127 C 87 97, 81 71, 63 66 Z" fill="#C9256B"/>
+      <path d="M48 78 C 37 102, 35 122, 39 140" fill="none" stroke="#C9256B" stroke-width="9" stroke-linecap="round"/>
+      <path d="M78 78 C 98 94, 110 110, 117 120" fill="none" stroke="#C9256B" stroke-width="9" stroke-linecap="round"/>
+      <!-- Girl -->
+      <path d="M147 83 C 159 89, 163 107, 159 124 C 157 132, 147 131, 150 122 C 154 108, 153 94, 144 86 Z" fill="#6F0F38"/>
+      <ellipse cx="141" cy="97" rx="13" ry="15" fill="#FFFDFE"/>
+      <path d="M129 99 C 127 85, 136 78, 144 80 C 152 82, 156 89, 155 98 C 151 89, 146 86, 139 87 C 133 89, 130 93, 129 100 Z" fill="#6F0F38"/>
+      <path d="M135 110 h 12 v 9 h -12 Z" fill="#FFFDFE"/>
+      <path d="M141 115 C 127 119, 123 141, 125 163 L 119 197 L 163 197 L 157 163 C 159 141, 155 119, 141 115 Z" fill="#FFFDFE"/>
+      <path d="M129 124 C 122 122, 119 121, 117 120" fill="none" stroke="#FFFDFE" stroke-width="8" stroke-linecap="round"/>
+      <path d="M155 126 C 163 145, 165 159, 163 172" fill="none" stroke="#FFFDFE" stroke-width="8" stroke-linecap="round"/>
+      <path d="M131 199 L 129 219" fill="none" stroke="#FFFDFE" stroke-width="9" stroke-linecap="round"/>
+      <path d="M151 199 L 153 219" fill="none" stroke="#FFFDFE" stroke-width="9" stroke-linecap="round"/>
+      <!-- Hand-hold -->
+      <circle cx="117" cy="120" r="7" fill="#A81C58"/>
+    </g>
+  </g>
 </svg>

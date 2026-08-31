@@ -4,6 +4,7 @@ import { useReport } from "../context/ReportContext.jsx";
 import { api } from "../api.js";
 import { useLanguage } from "../context/LanguageContext.jsx";
 import Icon from "../components/Icon.jsx";
+import Logo from "../components/Logo.jsx";
 import SpeakButton from "../components/SpeakButton.jsx";
 import { schemesFor, SOURCE_DOCUMENTS } from "../schemes.js";
 import { HELPLINES } from "../helplines.js";
@@ -106,7 +107,7 @@ export default function HealthReport() {
 
       <article className="doc">
         <header className="doc-masthead">
-          <span className="doc-emblem" aria-hidden="true">स</span>
+          <Logo size={44} animated={false} decorative className="doc-emblem" />
           <div className="doc-masthead-text">
             <div className="doc-issuer">Sakhi · Community Health Screening Tool</div>
             <h1 className="doc-title">Personal Health Screening Record</h1>
@@ -303,11 +304,9 @@ export default function HealthReport() {
 
         <footer className="doc-foot">
           <p style={{ margin: 0 }}>
-            <strong>Sakhi</strong> is a student project built for the SkillUp Hackathon with
-            IBM SkillsBuild. It is <strong>not</strong> an official Government of India
-            service, is not affiliated with any ministry, and issues no official document.
-            Scheme names and ministries are cited so that entitlements can be verified at
-            source; scheme terms are set by the issuing ministry and may change.
+            <strong>Sakhi</strong> is an independent student project, <strong>not</strong> an
+            official Government of India service. Scheme terms are set by the issuing
+            ministry and may change. Full terms: sakhi app, "Terms and Conditions".
           </p>
           <p style={{ margin: "8px 0 0" }}>
             Record {report.reference} · generated on this device · never transmitted ·

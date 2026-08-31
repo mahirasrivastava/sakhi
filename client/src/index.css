@@ -946,6 +946,134 @@ body.kbd-open { padding-bottom: 52vh; }
 .section-rule { height: 3px; width: 54px; background: var(--rose); border-radius: 999px; margin-top: 14px; }
 
 /* ---------------------------------------------------------------------------
+   Home — the voice-first hero
+   ---------------------------------------------------------------------------
+   The home page used to open with a gradient band, a headline, two pill
+   buttons and a row of badge chips — the templated shape most landing pages
+   settle on regardless of what the product does. This instead makes the
+   product's actual differentiator (you can speak instead of typing) the
+   visual centre: an orb and sound-rings drawn from the app's own mic icon,
+   not a stock illustration, standing in for the usual decorative hero image.
+   See Home.jsx for the content this styles.
+--------------------------------------------------------------------------- */
+
+.voice-hero {
+  padding: 48px 0 40px;
+  border-bottom: 1px solid var(--border);
+}
+.voice-hero-inner {
+  display: flex;
+  align-items: center;
+  gap: 40px;
+  flex-wrap: wrap;
+}
+.voice-copy { flex: 1 1 380px; max-width: 560px; }
+.voice-lang-title {
+  font-family: var(--font-display);
+  font-weight: 700;
+  color: var(--ink);
+  font-size: clamp(30px, 4.4vw, 46px);
+  line-height: 1.14;
+  margin: 0;
+  text-wrap: balance;
+}
+.voice-lang-sub {
+  font-family: var(--font-display);
+  font-style: italic;
+  font-weight: 600;
+  color: var(--ink-soft);
+  font-size: clamp(15px, 1.8vw, 19px);
+  margin: 8px 0 0;
+}
+.voice-sub { font-size: 17px; color: var(--ink-soft); line-height: 1.6; margin: 16px 0 0; max-width: 44ch; }
+
+.voice-actions { display: flex; align-items: center; gap: 18px; margin-top: 28px; }
+.voice-btn {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  background: var(--rose);
+  color: var(--on-brand);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  box-shadow: 0 6px 18px rgba(176, 74, 99, 0.32);
+  position: relative;
+  text-decoration: none;
+}
+.voice-btn::before {
+  content: "";
+  position: absolute;
+  inset: -8px;
+  border-radius: 50%;
+  border: 1.5px solid var(--rose);
+  opacity: 0.5;
+  animation: sakhi-pulse-ring 2.6s ease-out infinite;
+}
+@keyframes sakhi-pulse-ring {
+  0% { transform: scale(0.9); opacity: 0.5; }
+  100% { transform: scale(1.4); opacity: 0; }
+}
+.voice-label { display: flex; flex-direction: column; gap: 5px; }
+.voice-label-main { font-size: 15px; font-weight: 700; color: var(--ink); text-decoration: none; }
+.voice-label-main:hover { color: var(--rose-deep); }
+.voice-label-alt {
+  display: inline-flex; align-items: center; gap: 5px;
+  font-size: 12.5px; color: var(--ink-muted); text-decoration: underline;
+}
+.voice-trust {
+  margin: 26px 0 0;
+  font-size: 11.5px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-muted);
+  font-weight: 700;
+}
+
+.voice-orb-wrap {
+  position: relative;
+  width: 190px;
+  height: 190px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-inline: auto;
+}
+.orb-ring { position: absolute; border-radius: 50%; border: 1.4px solid var(--rose); opacity: 0.3; }
+.orb-ring.r1 { inset: 16px; animation: sakhi-breathe 5s ease-in-out infinite; }
+.orb-ring.r2 { inset: 0; opacity: 0.18; animation: sakhi-breathe 5s ease-in-out 0.6s infinite; }
+@keyframes sakhi-breathe {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+}
+.orb {
+  width: 104px;
+  height: 104px;
+  color: var(--on-brand);
+  background: radial-gradient(circle at 34% 28%, var(--rose-soft), var(--rose) 62%, var(--rose-deep) 100%);
+  border-radius: 61% 39% 55% 45% / 55% 45% 60% 40%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: sakhi-morph 9s ease-in-out infinite;
+}
+@keyframes sakhi-morph {
+  0%, 100% { border-radius: 61% 39% 55% 45% / 55% 45% 60% 40%; }
+  50% { border-radius: 45% 55% 40% 60% / 40% 60% 45% 55%; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .voice-btn::before, .orb-ring, .orb { animation: none; }
+}
+
+@media (max-width: 900px) {
+  .voice-hero-inner { justify-content: center; text-align: center; }
+  .voice-actions { justify-content: center; }
+}
+
+/* ---------------------------------------------------------------------------
    Helpline directory
    ---------------------------------------------------------------------------
    Whole-row dial targets. The number sits in monospace on the right of the name
@@ -1176,20 +1304,7 @@ body.kbd-open { padding-bottom: 52vh; }
   padding: 24px 30px;
   border-bottom: 3px double var(--border-strong);
 }
-.doc-emblem {
-  width: 54px;
-  height: 54px;
-  border-radius: 8px;
-  background: var(--rose);
-  color: var(--on-brand);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-family: var(--font-display);
-  font-size: 27px;
-  font-weight: 700;
-  flex-shrink: 0;
-}
+.doc-emblem { flex-shrink: 0; }
 .doc-masthead-text { flex: 1; min-width: 0; }
 .doc-issuer {
   font-size: 11px;
@@ -1362,7 +1477,6 @@ body.kbd-open { padding-bottom: 52vh; }
     background: #fff !important;
     color: #000 !important;
   }
-  .doc-emblem { background: #7E2F44 !important; color: #fff !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
   .doc-section-num { background: #7E2F44 !important; color: #fff !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
   .doc-section, .doc-scheme, .doc-signblock { break-inside: avoid; page-break-inside: avoid; }
   .doc-table th { background: #f0f0f0 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
@@ -1421,10 +1535,14 @@ body.kbd-open { padding-bottom: 52vh; }
    government health worker. The emblem is also restricted under the State
    Emblem of India (Prohibition of Improper Use) Act 2005.
 
-   The tricolour rule and the bilingual masthead are civic visual language, used
-   widely by non-government Indian services, and the masthead carries an
-   explicit "independent service" line. That is the line this stylesheet holds:
-   familiar and legible, never impersonating.
+   The tricolour rule and the bilingual masthead are civic visual language,
+   used widely by non-government Indian services. The "independent service,
+   not a government app" disclosure itself used to live as a permanent line
+   under the masthead; it now lives in the Terms and Conditions instead —
+   required reading (full scroll, not just a click) on first visit via
+   ConsentGate, and one tap away from every footer after that. See terms.js
+   for why that reads better as a document someone actually gets to than as
+   wallpaper repeated in the header and the footer both.
    ------------------------------------------------------------------------- */
 
 :root {
@@ -1451,8 +1569,8 @@ body.kbd-open { padding-bottom: 52vh; }
 .tricolour-rule span:nth-child(2) { background: #FFFFFF; }
 .tricolour-rule span:nth-child(3) { background: var(--tri-green); }
 
-/* Masthead: bilingual title block, the convention every Indian public site
-   uses so a reader who cannot read one script can read the other. */
+/* Masthead: the brand mark and wordmark lockup, plus the same "Health
+   triage & screening" line every Indian public site sets under its logo. */
 .masthead {
   display: flex;
   align-items: center;
@@ -1461,48 +1579,62 @@ body.kbd-open { padding-bottom: 52vh; }
   color: var(--ink);
   flex-shrink: 0;
 }
-.masthead-mark {
-  width: 48px;
-  height: 48px;
-  border-radius: var(--radius-sm);
-  background: var(--rose);
-  color: var(--on-brand);
-  display: grid;
-  place-items: center;
-  font-family: var(--font-display);
-  font-size: 24px;
-  font-weight: 700;
-  flex-shrink: 0;
-  border: 1px solid var(--rose-deep);
-}
-.masthead-text { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
-.masthead-hi {
-  font-size: 13px;
-  font-weight: 700;
-  color: var(--ink-soft);
-  line-height: 1.2;
-}
-.masthead-en {
-  font-family: var(--font-display);
-  font-size: 23px;
-  font-weight: 700;
-  line-height: 1.1;
-}
+.masthead-text { display: flex; flex-direction: column; gap: 1px; min-width: 0; justify-content: center; }
 .masthead-tag {
   font-size: 11px;
   letter-spacing: 0.05em;
   text-transform: uppercase;
   font-weight: 700;
   color: var(--ink-muted);
-}
-/* Says plainly what this is not. Small, but never hidden. */
-.masthead-independent {
-  font-size: 10.5px;
-  color: var(--ink-muted);
-  letter-spacing: 0.02em;
+  margin-top: 3px;
 }
 
 .site-header { border-bottom: 2px solid var(--border-strong); }
+
+/* ---------------------------------------------------------------------------
+   The Sakhi mark
+   ---------------------------------------------------------------------------
+   See Logo.jsx for the geometry and variant rationale. Motion here is
+   decorative only — off under prefers-reduced-motion, off in print — and
+   the wordmark is set in the mark's own type pair (Tiro Devanagari Hindi /
+   Mukta), loaded once in index.html, rather than the app's Fraunces/Inter:
+   it is part of the logo, not UI text.
+--------------------------------------------------------------------------- */
+@keyframes sakhiSway { 0%, 100% { transform: rotate(-0.9deg); } 50% { transform: rotate(0.9deg); } }
+@keyframes sakhiFlutter { 0%, 100% { transform: translateX(0) rotate(0deg); } 50% { transform: translateX(-4px) rotate(-2.4deg); } }
+@keyframes sakhiHalo { 0%, 100% { transform: scale(1); opacity: 0.55; } 50% { transform: scale(1.05); opacity: 0.9; } }
+@keyframes sakhiHold { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.18); } }
+
+.logo-sway { animation: sakhiSway 6s ease-in-out infinite; transform-origin: 100px 224px; }
+.logo-flutter { animation: sakhiFlutter 5s ease-in-out infinite; transform-origin: 64px 30px; }
+.logo-halo { animation: sakhiHalo 6s ease-in-out infinite; transform-origin: 100px 222px; }
+.logo-hold { animation: sakhiHold 3s ease-in-out infinite; transform-origin: 117px 120px; }
+
+@media (prefers-reduced-motion: reduce) {
+  .logo-sway, .logo-flutter, .logo-halo, .logo-hold { animation: none; }
+}
+@media print {
+  .logo-sway, .logo-flutter, .logo-halo, .logo-hold { animation: none; }
+}
+
+.logo-lockup { display: inline-flex; align-items: center; gap: 16px; }
+.logo-wordmark { display: flex; flex-direction: column; gap: 1px; }
+.logo-wordmark-dv {
+  font-family: 'Tiro Devanagari Hindi', serif;
+  font-size: 26px;
+  line-height: 1.25;
+  color: #C9256B;
+}
+.logo-wordmark-en {
+  font-family: 'Mukta', sans-serif;
+  font-weight: 600;
+  font-size: 12.5px;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+  color: #4A1230;
+}
+.logo-wordmark-reversed .logo-wordmark-dv { color: #FFFDFE; }
+.logo-wordmark-reversed .logo-wordmark-en { color: #F7C9DC; }
 
 /* Flatter, more bordered blocks — a notice board rather than a card deck. */
 .card {
@@ -1539,7 +1671,7 @@ body.kbd-open { padding-bottom: 52vh; }
 .field-input:focus-visible { outline: 3px solid var(--rose); outline-offset: 1px; }
 
 /* Nav items get real hit areas rather than text-sized ones. */
-.nav-link, .nav-group-trigger { min-height: 42px; border-radius: var(--radius-sm); }
+.nav-link, .nav-group-trigger { min-height: var(--tap-min); border-radius: var(--radius-sm); }
 .util-btn { border-radius: var(--radius-sm); min-height: 32px; }
 .helpline { border-radius: var(--radius-sm); }
 
@@ -1548,10 +1680,81 @@ body.kbd-open { padding-bottom: 52vh; }
 :focus-visible { outline: 3px solid var(--rose); outline-offset: 2px; }
 
 @media (max-width: 640px) {
-  .masthead-en { font-size: 19px; }
-  .masthead-hi { font-size: 11.5px; }
-  .masthead-mark { width: 40px; height: 40px; font-size: 20px; }
-  .masthead-tag, .masthead-independent { display: none; }
+  .logo-wordmark-dv { font-size: 21px; }
+  .logo-wordmark-en { font-size: 10.5px; letter-spacing: 0.22em; }
+  .masthead-tag { display: none; }
+}
+
+/* ---------------------------------------------------------------------------
+   Phone tab bar
+   ---------------------------------------------------------------------------
+   The five core destinations, always on screen, always in the same place —
+   the pattern Aarogya Setu, CoWIN and UMANG all use instead of a hamburger
+   for their most-used actions. See BottomNav.jsx for why it renders from the
+   same list as the drawer above. Phone-only: above 768px the top nav already
+   shows every item in one row or a drawer one tap away, so a second,
+   permanently-docked bar would just be a duplicate.
+   ------------------------------------------------------------------------- */
+:root { --bottom-nav-h: 64px; }
+
+.bottom-nav { display: none; }
+
+@media (max-width: 768px) {
+  .app-shell { padding-bottom: calc(var(--bottom-nav-h) + env(safe-area-inset-bottom, 0px)); }
+
+  .bottom-nav {
+    display: flex;
+    position: fixed;
+    inset-inline: 0;
+    bottom: 0;
+    z-index: 60;
+    height: calc(var(--bottom-nav-h) + env(safe-area-inset-bottom, 0px));
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+    background: var(--surface);
+    border-top: 2px solid var(--border-strong);
+    box-shadow: 0 -6px 20px rgba(0, 0, 0, 0.1);
+  }
+  /* The virtual keyboard already docks to the same edge — when it is open it
+     owns the bottom of the screen, so the tab bar steps aside rather than
+     stacking two bars on top of each other. */
+  body.kbd-open .bottom-nav { display: none; }
+
+  .bottom-nav-item {
+    position: relative;
+    flex: 1 1 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 3px;
+    min-width: var(--tap-min);
+    color: var(--ink-muted);
+    text-decoration: none;
+    font-size: 10.5px;
+    font-weight: 700;
+    line-height: 1.15;
+    text-align: center;
+    padding: 4px 2px;
+  }
+  .bottom-nav-item span {
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .bottom-nav-item.active { color: var(--rose-deep); }
+  .bottom-nav-item.active svg { color: var(--rose-deep); }
+  .bottom-nav-item.active::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    inset-inline-start: 50%;
+    transform: translateX(-50%);
+    width: 28px;
+    height: 3px;
+    border-radius: 0 0 4px 4px;
+    background: var(--rose);
+  }
 }
 
 /* ===========================================================================

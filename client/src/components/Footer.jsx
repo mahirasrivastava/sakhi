@@ -2,6 +2,7 @@ import React from "react";
 import { Link } from "react-router-dom";
 import { useLanguage } from "../context/LanguageContext.jsx";
 import Icon from "./Icon.jsx";
+import Logo from "./Logo.jsx";
 import { HELPLINES } from "../helplines.js";
 
 // The helplines that belong in a footer: the ones someone scrolled to the
@@ -25,7 +26,7 @@ export default function Footer() {
         <div style={styles.columns}>
           <div>
             <div style={styles.brandRow}>
-              <span style={styles.mark} aria-hidden="true">स</span>
+              <Logo size={30} animated={false} />
               <span style={styles.brandName}>Sakhi</span>
             </div>
             <p style={styles.about}>
@@ -88,11 +89,8 @@ export default function Footer() {
         </div>
 
         <div style={styles.bottom}>
-          <p style={styles.disclaimer}>{t("footer_disclaimer")}</p>
-          <p style={styles.small}>
-            Sakhi · Built for the SkillUp Hackathon with IBM SkillsBuild. This is a
-            student project, not an official government service.
-          </p>
+          <p style={styles.small}>© Sakhi</p>
+          <Link to="/terms" style={styles.termsLink}>{t("terms_footer_link")}</Link>
         </div>
       </div>
     </footer>
@@ -111,11 +109,6 @@ const styles = {
     gridTemplateColumns: "repeat(auto-fit, minmax(210px, 1fr))",
   },
   brandRow: { display: "flex", alignItems: "center", gap: 10 },
-  mark: {
-    width: 34, height: 34, borderRadius: 9, background: "var(--rose)",
-    color: "var(--on-brand)", display: "flex", alignItems: "center",
-    justifyContent: "center", fontFamily: "var(--font-display)", fontSize: 18, fontWeight: 700,
-  },
   brandName: { fontFamily: "var(--font-display)", fontSize: 21, fontWeight: 700, color: "var(--ink)" },
   about: { fontSize: 13.5, color: "var(--ink-soft)", lineHeight: 1.65, marginTop: 12, maxWidth: 300 },
   colTitle: {
@@ -134,8 +127,11 @@ const styles = {
   },
   sources: { fontSize: 12, color: "var(--ink-muted)", lineHeight: 1.6, marginTop: 14 },
   bottom: {
-    borderTop: "1px solid var(--border)", marginTop: 30, paddingTop: 20, textAlign: "center",
+    borderTop: "1px solid var(--border)", marginTop: 30, paddingTop: 20,
+    display: "flex", alignItems: "center", justifyContent: "center", gap: 16, flexWrap: "wrap",
   },
-  disclaimer: { color: "var(--ink-soft)", fontSize: 13.5, maxWidth: 680, margin: "0 auto 10px", lineHeight: 1.6 },
-  small: { color: "var(--ink-muted)", fontSize: 12, lineHeight: 1.6 },
+  small: { color: "var(--ink-muted)", fontSize: 12, lineHeight: 1.6, margin: 0 },
+  termsLink: {
+    color: "var(--rose-deep)", fontSize: 12.5, fontWeight: 700, textDecoration: "underline",
+  },
 };

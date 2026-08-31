@@ -1,6 +1,7 @@
 import React from "react";
 import { Routes, Route } from "react-router-dom";
 import Navbar from "./components/Navbar.jsx";
+import BottomNav from "./components/BottomNav.jsx";
 import OfflineBanner from "./components/OfflineBanner.jsx";
 import Footer from "./components/Footer.jsx";
 import ConsentGate from "./components/ConsentGate.jsx";
@@ -26,6 +27,7 @@ import AccountRecovery from "./pages/AccountRecovery.jsx";
 import PrescriptionReader from "./pages/PrescriptionReader.jsx";
 import Impact from "./pages/Impact.jsx";
 import Demo from "./pages/Demo.jsx";
+import TermsAndConditions from "./pages/TermsAndConditions.jsx";
 
 export default function App() {
   return (
@@ -37,7 +39,7 @@ export default function App() {
           router rather than living inside any one of them. It is sessionStorage
           only — see ReportContext for why nothing here reaches the server. */}
       <ReportProvider>
-      <div style={{ display: "flex", flexDirection: "column", minHeight: "100vh" }}>
+      <div className="app-shell" style={{ display: "flex", flexDirection: "column", minHeight: "100vh" }}>
         <Navbar />
         <OfflineBanner />
         <main style={{ flex: 1 }}>
@@ -59,6 +61,7 @@ export default function App() {
               <Route path="/account/reset" element={<AccountRecovery mode="reset" />} />
               <Route path="/impact" element={<Impact />} />
               <Route path="/demo" element={<Demo />} />
+              <Route path="/terms" element={<TermsAndConditions />} />
 
               {/* Staff-only area, segregated from the patient-facing app. */}
               <Route path="/asha/login" element={<AshaLogin />} />
@@ -76,6 +79,7 @@ export default function App() {
         <Footer />
         {/* One keyboard for the whole app — every ScriptField routes into it. */}
         <VirtualKeyboard />
+        <BottomNav />
       </div>
       </ReportProvider>
       </UserProvider>

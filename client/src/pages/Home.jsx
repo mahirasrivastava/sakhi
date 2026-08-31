@@ -4,11 +4,23 @@ import { useLanguage } from "../context/LanguageContext.jsx";
 import Icon from "./../components/Icon.jsx";
 import JourneyChecklist from "../components/JourneyChecklist.jsx";
 import { callsFor } from "../helplines.js";
+import en from "../i18n/en.json";
 
-// The full service list, as a grid of large tiles. This is the pattern the
-// public service apps settle on for good reason: every service is visible at
-// once, each one is a big target with a pictogram and a plain-language
-// description, and nobody has to guess what lives behind a menu.
+// ---------------------------------------------------------------------------
+// "Say It" — voice-first
+// ---------------------------------------------------------------------------
+//
+// The home page used to open with a gradient hero band, a headline, two pill
+// buttons and a row of badge chips — the templated shape most landing pages
+// settle on regardless of what the product actually does. This instead
+// leads with the product's real differentiator: you can speak instead of
+// typing. The orb and its sound-rings are drawn from the app's own mic
+// icon (see Icon.jsx), not a stock illustration, and the primary action is
+// a tactile "press to speak" button rather than a generic pill CTA.
+//
+// The headline pairs the current UI language with English underneath it —
+// the same bilingual convention the masthead already uses, just at hero
+// scale — instead of a small "kicker" badge above generic hero copy.
 const SERVICES = [
   { to: "/triage", icon: "triage", key: "nav_triage", descKey: "home_desc_triage" },
   { to: "/nearby", icon: "pin", key: "nav_nearby", descKey: "home_desc_nearby", urgent: true },
@@ -29,38 +41,57 @@ const PROMISES = [
   { icon: "lock", titleKey: "home_promise_keep_title", textKey: "home_promise_keep_text" },
 ];
 
+// A numbered walkthrough before the tile grid, not after. Someone who has
+// never used Sakhi and does not yet trust it should see the shape of the
+// whole interaction — three short steps, nothing hidden — before being asked
+// to pick from eleven destinations.
+const STEPS = [
+  { icon: "mic", titleKey: "home_step1_title", textKey: "home_step1_text" },
+  { icon: "shield", titleKey: "home_step2_title", textKey: "home_step2_text" },
+  { icon: "handshake", titleKey: "home_step3_title", textKey: "home_step3_text" },
+];
+
 export default function Home() {
-  const { t } = useLanguage();
+  const { t, lang } = useLanguage();
   const emergencyLines = callsFor({ limit: 3 });
 
   return (
     <>
-      {/* Hero band. The tinted full-bleed background is what stops the top of
-          the page reading as an empty white sheet with a paragraph on it. */}
-      <section style={styles.heroBand}>
-        <div className="container" style={styles.heroInner}>
-          <div style={{ maxWidth: 640 }}>
-            <span style={styles.kicker}>{t("home_kicker")}</span>
-            <h1 className="display" style={styles.heroTitle}>{t("home_title")}</h1>
-            <p style={styles.heroSub}>{t("home_subtitle")}</p>
+      {/* The hero. No gradient band, no floating alert card — the mic orb
+          and its rings are the visual centre, and the primary action is the
+          orb button itself rather than a pill-shaped "Start" button. */}
+      <section className="voice-hero">
+        <div className="container voice-hero-inner">
+          <div className="voice-copy">
+            <p className="voice-lang-title">{t("home_title")}</p>
+            {/* The masthead already pairs Hindi with English regardless of
+                the active language; this does the same at hero scale —
+                current language on top, English underneath, skipped only
+                when they're the same string. */}
+            {lang !== "en" && <p className="voice-lang-sub">{en.home_title}</p>}
+            <p className="voice-sub">{t("home_subtitle")}</p>
 
-            <div style={styles.heroActions}>
-              <Link to="/triage" className="btn btn-primary btn-lg">
-                {t("home_cta")} <Icon name="arrowRight" size={18} />
+            <div className="voice-actions">
+              <Link to="/triage" className="voice-btn" aria-label={t("home_cta")}>
+                <Icon name="mic" size={26} />
               </Link>
-              <Link to="/sakhi" className="btn btn-ghost btn-lg">
-                <Icon name="compass" size={18} /> {t("home_browse_topics")}
-              </Link>
+              <div className="voice-label">
+                <Link to="/triage" className="voice-label-main">{t("home_cta")}</Link>
+                <Link to="/sakhi" className="voice-label-alt">
+                  <Icon name="compass" size={12} /> {t("home_browse_topics")}
+                </Link>
+              </div>
             </div>
 
-            <div style={styles.badges}>
-              {["home_pill_1", "home_pill_2", "home_pill_3"].map((k) => (
-                <span key={k} style={styles.badge}>
-                  <Icon name="check" size={14} style={{ color: "var(--rose)" }} />
-                  {t(k)}
-                </span>
-              ))}
-            </div>
+            <p className="voice-trust">{t("home_kicker")}</p>
+          </div>
+
+          <div className="voice-orb-wrap" aria-hidden="true">
+            <span className="orb-ring r2" />
+            <span className="orb-ring r1" />
+            <span className="orb">
+              <Icon name="mic" size={42} />
+            </span>
           </div>
 
           {/* Emergency panel, deliberately at the top right rather than buried
@@ -88,6 +119,30 @@ export default function Home() {
               {t("home_emergency_more")} <Icon name="arrowRight" size={13} />
             </Link>
           </aside>
+        </div>
+      </section>
+
+      <section className="container" style={{ paddingTop: 46, paddingBottom: 10 }}>
+        <div className="section-head">
+          <span className="section-eyebrow">
+            <Icon name="compass" size={13} /> {t("home_steps_eyebrow")}
+          </span>
+          <h2 className="display section-title">{t("home_steps_title")}</h2>
+          <p className="section-sub">{t("home_steps_sub")}</p>
+          <div className="section-rule" />
+        </div>
+
+        <div style={styles.stepsRow}>
+          {STEPS.map((s, i) => (
+            <div key={s.titleKey} style={styles.stepCard}>
+              <span style={styles.stepNum}>{i + 1}</span>
+              <span style={styles.stepIcon}>
+                <Icon name={s.icon} size={24} />
+              </span>
+              <h3 style={styles.stepTitle}>{t(s.titleKey)}</h3>
+              <p style={styles.stepText}>{t(s.textKey)}</p>
+            </div>
+          ))}
         </div>
       </section>
 
@@ -149,33 +204,6 @@ const styles = {
   servicesBand: {
     background: "linear-gradient(180deg, var(--cream) 0%, var(--rose-soft) 55%, var(--cream) 100%)",
   },
-  heroBand: {
-    background: "linear-gradient(180deg, var(--rose-soft) 0%, var(--cream) 100%)",
-    borderBottom: "1px solid var(--border)",
-    paddingTop: 46,
-    paddingBottom: 46,
-  },
-  heroInner: {
-    display: "flex", gap: 34, alignItems: "flex-start",
-    justifyContent: "space-between", flexWrap: "wrap",
-  },
-  kicker: {
-    display: "inline-block", padding: "6px 15px", borderRadius: 999,
-    background: "var(--rose)", color: "var(--on-brand)",
-    fontSize: 12.5, fontWeight: 700, letterSpacing: "0.06em", textTransform: "uppercase",
-  },
-  heroTitle: {
-    fontSize: "clamp(32px, 4.6vw, 54px)", lineHeight: 1.1, marginTop: 18, color: "var(--ink)",
-  },
-  heroSub: { fontSize: 18.5, color: "var(--ink-soft)", marginTop: 18, lineHeight: 1.6 },
-  heroActions: { display: "flex", gap: 12, marginTop: 28, flexWrap: "wrap" },
-  badges: { display: "flex", gap: 9, marginTop: 26, flexWrap: "wrap" },
-  badge: {
-    display: "inline-flex", alignItems: "center", gap: 7,
-    fontSize: 13.5, color: "var(--rose-deep)", background: "var(--surface)",
-    border: "1px solid var(--border-strong)", padding: "8px 14px",
-    borderRadius: 999, fontWeight: 600,
-  },
 
   emergencyPanel: {
     flex: "1 1 290px", maxWidth: 350,
@@ -195,6 +223,30 @@ const styles = {
     marginInlineStart: "auto",
     fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace",
   },
+
+  stepsRow: {
+    display: "grid", gap: 22, gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
+    marginTop: 10,
+  },
+  stepCard: {
+    position: "relative",
+    background: "var(--surface)", border: "1px solid var(--border-strong)",
+    borderRadius: "var(--radius)", padding: "26px 20px 20px",
+  },
+  stepNum: {
+    position: "absolute", top: -15, insetInlineStart: 18,
+    width: 30, height: 30, borderRadius: "50%",
+    background: "var(--rose)", color: "var(--on-brand)",
+    display: "flex", alignItems: "center", justifyContent: "center",
+    fontFamily: "var(--font-display)", fontWeight: 700, fontSize: 15,
+    border: "2px solid var(--cream)",
+  },
+  stepIcon: {
+    width: 44, height: 44, borderRadius: 12, background: "var(--rose-soft)",
+    color: "var(--rose-deep)", display: "flex", alignItems: "center", justifyContent: "center",
+  },
+  stepTitle: { fontSize: 16.5, fontWeight: 700, color: "var(--ink)", marginTop: 14 },
+  stepText: { fontSize: 13.5, color: "var(--ink-soft)", lineHeight: 1.6, marginTop: 6 },
 
   promiseBand: {
     display: "grid", gap: 26, gridTemplateColumns: "repeat(auto-fit, minmax(250px, 1fr))",
